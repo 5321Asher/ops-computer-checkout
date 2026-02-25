@@ -1,15 +1,15 @@
 :root {
-    --bg: #0e0f11;
-    --surface: #16181c;
-    --border: #2a2d33;
-    --border-hover: #404550;
-    --accent: #e8ff47;
-    --accent-dim: #b8cc2a;
-    --text: #e2e4e9;
-    --muted: #6b7280;
-    --danger: #ff4747;
-    --danger-dim: #cc2a2a;
-    --success: #47ff8a;
+    --bg: #f5f4f0;
+    --surface: #ffffff;
+    --border: #d4d2ca;
+    --border-hover: #a8a49a;
+    --accent: #8aad00;
+    --accent-dim: #6b8a00;
+    --text: #1a1b1e;
+    --muted: #7a7670;
+    --danger: #d93535;
+    --danger-dim: #b02020;
+    --success: #1a9e52;
     --mono: "IBM Plex Mono", monospace;
     --sans: "IBM Plex Sans", sans-serif;
 }
@@ -37,8 +37,8 @@ body::before {
         0deg,
         transparent,
         transparent 2px,
-        rgba(255, 255, 255, 0.012) 2px,
-        rgba(255, 255, 255, 0.012) 4px
+        rgba(0, 0, 0, 0.018) 2px,
+        rgba(0, 0, 0, 0.018) 4px
     );
     pointer-events: none;
     z-index: 9999;
@@ -52,7 +52,7 @@ header {
     gap: 14px;
     position: sticky;
     top: 0;
-    background: rgba(14, 15, 17, 0.95);
+    background: rgba(245, 244, 240, 0.95);
     backdrop-filter: blur(8px);
     z-index: 100;
 }
@@ -134,6 +134,7 @@ main {
     margin-bottom: 32px;
     position: relative;
     overflow: hidden;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
 }
 
 .checkout-form::before {
@@ -178,12 +179,12 @@ main {
 }
 
 .field input::placeholder {
-    color: #3a3d45;
+    color: #bbb9b2;
 }
 
 .btn-checkout {
     background: var(--accent);
-    color: #0e0f11;
+    color: #ffffff;
     border: none;
     font-family: var(--mono);
     font-size: 12px;
@@ -207,8 +208,8 @@ main {
     transform: scale(0.98);
 }
 .btn-checkout:disabled {
-    background: #3a3d45;
-    color: #6b7280;
+    background: #d4d2ca;
+    color: #a8a49a;
     cursor: not-allowed;
 }
 
@@ -235,7 +236,7 @@ main {
 }
 #toast.success {
     background: var(--success);
-    color: #0e0f11;
+    color: #ffffff;
 }
 #toast.error {
     background: var(--danger);
@@ -275,7 +276,7 @@ main {
     border-color: var(--border-hover);
 }
 #search::placeholder {
-    color: #3a3d45;
+    color: #bbb9b2;
 }
 
 /* ─── STATS BAR ─── */
@@ -296,18 +297,16 @@ main {
 
 /* ─── ASSET LIST ─── */
 #asset-list {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 10px;
 }
 
 .asset-card {
     background: var(--surface);
     border: 1px solid var(--border);
-    display: grid;
-    grid-template-columns: auto 1fr auto;
-    align-items: center;
-    gap: 0;
+    display: flex;
+    flex-direction: column;
     overflow: hidden;
     transition: border-color 0.15s;
     animation: slideIn 0.2s ease forwards;
@@ -324,42 +323,53 @@ main {
     }
 }
 
+
 .asset-card:hover {
     border-color: var(--border-hover);
 }
 
+
 .btn-return {
     background: transparent;
     border: none;
-    border-right: 1px solid var(--border);
+    border-top: 1px solid var(--border);
     color: var(--danger);
     font-family: var(--mono);
     font-size: 10px;
     font-weight: 600;
     letter-spacing: 0.1em;
     text-transform: uppercase;
-    padding: 0 16px;
-    height: 100%;
-    min-height: 64px;
+    padding: 10px;
+    width: 100%;
     cursor: pointer;
-    transition:
-        background 0.15s,
-        color 0.15s;
-    white-space: nowrap;
+    transition: background 0.15s, color 0.15s;
 }
 
 .btn-return:hover {
     background: var(--danger);
     color: #fff;
-    border-right-color: var(--danger);
+}.card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--border);
+    gap: 8px;
 }
 
 .card-body {
-    padding: 14px 18px;
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    gap: 4px 24px;
-    align-items: center;
+    padding: 12px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex: 1;
+}
+
+.card-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 8px;
 }
 
 .card-asset {
@@ -369,6 +379,14 @@ main {
     color: var(--accent);
     grid-column: 1;
     grid-row: 1;
+}
+
+.card-label {
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.12em;
+    color: var(--muted);
+    flex-shrink: 0;
 }
 
 .card-user {
@@ -390,7 +408,7 @@ main {
 .card-time {
     font-family: var(--mono);
     font-size: 10px;
-    color: #3d4149;
+    color: #c0bdb5;
     letter-spacing: 0.06em;
     grid-column: 1 / 4;
     grid-row: 2;

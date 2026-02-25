@@ -136,7 +136,7 @@ app.post("/checkin/:id", (req, res) => {
     const updated = checkin();
 
     // read ticketList fresh from disk, mutate, then write back for persistence
-    const ticketListPath = "./ticketList.json";
+    const ticketListPath = "./tickets/ticketList.json";
     const ticketList = JSON.parse(readFileSync(ticketListPath, "utf-8"));
 
     const newTicket = {

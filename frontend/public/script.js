@@ -43,7 +43,6 @@ function filterAssets() {
 function renderAssets(assets) {
     const list = document.getElementById("asset-list");
     if (!assets.length) {
-        //if no items display a indicator
         list.innerHTML = `<div class="empty-state"><span class="big">⊘</span>${
             document.getElementById("search").value
                 ? "No matching assets"
@@ -51,22 +50,31 @@ function renderAssets(assets) {
         }</div>`;
         return;
     }
-
-    //for all filtered assets create a card
     list.innerHTML = assets
         .map(
             (a, i) => `
     <div class="asset-card" style="animation-delay:${i * 30}ms" id="card-${a.id}">
+      <div class="card-header">
+        <span class="card-asset">${escHtml(a.name)}</span>
+        <span class="card-id-pill">${a.id.slice(0, 8)}</span>
+      </div>
+      <div class="card-body">
+        <div class="card-row">
+          <span class="card-label">USER</span>
+          <span class="card-user">${escHtml(a.asset)}</span>
+        </div>
+        <div class="card-row">
+          <span class="card-label">LOCATION</span>
+          <span class="card-location">${escHtml(a.location)}</span>
+        </div>
+        <div class="card-row">
+          <span class="card-label">SINCE</span>
+          <span class="card-time">${formatDate(a.checkout)}</span>
+        </div>
+      </div>
       <button class="btn-return" onclick="handleReturn('${a.id}', this)">
         RETURN
       </button>
-      <div class="card-body">
-              <span class="card-asset">${escHtml(a.name)}</span>
-              <span class="card-user">${escHtml(a.asset)}</span>
-              <span class="card-location">${escHtml(a.location)}</span>
-              <span class="card-time">CHECKED OUT ${formatDate(a.checkout)}</span>
-            </div>
-      <span class="card-id-pill">${a.id.slice(0, 8)}</span>
     </div>
   `,
         )

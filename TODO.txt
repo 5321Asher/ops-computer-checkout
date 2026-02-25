@@ -1,3 +1,5 @@
-light mode
-grid instead of list (idk abt this)
+light mode -- \/
+grid instead of list (idk abt this) -- \/
 switch db for excel sheet on server
+move ticketlist to server.
+clear ticketList.json after writing to tickets.txt
