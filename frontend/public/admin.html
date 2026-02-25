@@ -1,0 +1,1010 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Asset Checkout — Admin</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500&display=swap"
+            rel="stylesheet"
+        />
+        <style>
+            :root {
+                --bg: #0e0f11;
+                --surface: #16181c;
+                --surface2: #1c1f24;
+                --border: #2a2d33;
+                --border-hover: #404550;
+                --accent: #e8ff47;
+                --accent-dim: #b8cc2a;
+                --text: #e2e4e9;
+                --muted: #6b7280;
+                --danger: #ff4747;
+                --success: #47ff8a;
+                --info: #47c8ff;
+                --warn: #ffb347;
+                --mono: "IBM Plex Mono", monospace;
+                --sans: "IBM Plex Sans", sans-serif;
+            }
+
+            * {
+                box-sizing: border-box;
+                margin: 0;
+                padding: 0;
+            }
+
+            body {
+                background: var(--bg);
+                color: var(--text);
+                font-family: var(--sans);
+                min-height: 100vh;
+            }
+
+            /* scanline */
+            body::before {
+                content: "";
+                position: fixed;
+                inset: 0;
+                background: repeating-linear-gradient(
+                    0deg,
+                    transparent,
+                    transparent 2px,
+                    rgba(255, 255, 255, 0.012) 2px,
+                    rgba(255, 255, 255, 0.012) 4px
+                );
+                pointer-events: none;
+                z-index: 9999;
+            }
+
+            /* ─── HEADER ─── */
+            header {
+                border-bottom: 1px solid var(--border);
+                padding: 18px 32px;
+                display: flex;
+                align-items: center;
+                gap: 14px;
+                position: sticky;
+                top: 0;
+                background: rgba(14, 15, 17, 0.95);
+                backdrop-filter: blur(8px);
+                z-index: 100;
+            }
+
+            .logo-mark {
+                width: 28px;
+                height: 28px;
+                border: 2px solid var(--accent);
+                display: grid;
+                place-items: center;
+                flex-shrink: 0;
+            }
+            .logo-mark svg {
+                width: 14px;
+                height: 14px;
+                fill: var(--accent);
+            }
+
+            header h1 {
+                font-family: var(--mono);
+                font-size: 13px;
+                font-weight: 600;
+                letter-spacing: 0.12em;
+                text-transform: uppercase;
+                color: var(--text);
+            }
+
+            .admin-badge {
+                font-family: var(--mono);
+                font-size: 10px;
+                font-weight: 600;
+                letter-spacing: 0.1em;
+                text-transform: uppercase;
+                background: var(--accent);
+                color: #0e0f11;
+                padding: 3px 8px;
+            }
+
+            .header-right {
+                margin-left: auto;
+                display: flex;
+                align-items: center;
+                gap: 12px;
+            }
+
+            .nav-link {
+                font-family: var(--mono);
+                font-size: 11px;
+                letter-spacing: 0.08em;
+                color: var(--muted);
+                text-decoration: none;
+                text-transform: uppercase;
+                transition: color 0.15s;
+            }
+            .nav-link:hover {
+                color: var(--text);
+            }
+
+            /* ─── LAYOUT ─── */
+            main {
+                max-width: 1200px;
+                margin: 0 auto;
+                padding: 32px 24px 80px;
+            }
+
+            /* ─── SECTION LABEL ─── */
+            .section-header {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                margin-bottom: 14px;
+                gap: 12px;
+            }
+
+            .section-label {
+                font-family: var(--mono);
+                font-size: 11px;
+                font-weight: 500;
+                letter-spacing: 0.15em;
+                text-transform: uppercase;
+                color: var(--muted);
+            }
+
+            .section-divider {
+                height: 1px;
+                background: var(--border);
+                flex: 1;
+                margin: 0 12px;
+            }
+
+            /* ─── STATS ROW ─── */
+            .stats-row {
+                display: grid;
+                grid-template-columns: repeat(3, 1fr);
+                gap: 12px;
+                margin-bottom: 32px;
+            }
+
+            .stat-card {
+                background: var(--surface);
+                border: 1px solid var(--border);
+                padding: 20px 22px;
+                position: relative;
+                overflow: hidden;
+            }
+
+            .stat-card::before {
+                content: "";
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 3px;
+                height: 100%;
+            }
+            .stat-card.active::before {
+                background: var(--warn);
+            }
+            .stat-card.total::before {
+                background: var(--info);
+            }
+            .stat-card.today::before {
+                background: var(--success);
+            }
+
+            .stat-label {
+                font-family: var(--mono);
+                font-size: 10px;
+                letter-spacing: 0.12em;
+                text-transform: uppercase;
+                color: var(--muted);
+                margin-bottom: 8px;
+            }
+
+            .stat-value {
+                font-family: var(--mono);
+                font-size: 32px;
+                font-weight: 600;
+                line-height: 1;
+            }
+            .stat-card.active .stat-value {
+                color: var(--warn);
+            }
+            .stat-card.total .stat-value {
+                color: var(--info);
+            }
+            .stat-card.today .stat-value {
+                color: var(--success);
+            }
+
+            /* ─── ACTION BUTTONS ─── */
+            .actions-row {
+                display: flex;
+                gap: 10px;
+                margin-bottom: 32px;
+                flex-wrap: wrap;
+            }
+
+            .btn {
+                font-family: var(--mono);
+                font-size: 11px;
+                font-weight: 600;
+                letter-spacing: 0.1em;
+                text-transform: uppercase;
+                padding: 10px 20px;
+                border: none;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                transition:
+                    background 0.15s,
+                    transform 0.1s;
+                white-space: nowrap;
+            }
+
+            .btn:active {
+                transform: scale(0.98);
+            }
+            .btn:disabled {
+                opacity: 0.4;
+                cursor: not-allowed;
+            }
+
+            .btn-save {
+                background: var(--accent);
+                color: #0e0f11;
+            }
+            .btn-save:hover:not(:disabled) {
+                background: var(--accent-dim);
+            }
+
+            .btn-download {
+                background: var(--surface);
+                color: var(--info);
+                border: 1px solid var(--info);
+            }
+            .btn-download:hover:not(:disabled) {
+                background: var(--info);
+                color: #0e0f11;
+            }
+
+            .btn-refresh {
+                background: var(--surface);
+                color: var(--muted);
+                border: 1px solid var(--border);
+            }
+            .btn-refresh:hover:not(:disabled) {
+                border-color: var(--border-hover);
+                color: var(--text);
+            }
+
+            /* ─── TABLE SECTION ─── */
+            .table-section {
+                margin-bottom: 40px;
+            }
+
+            .search-wrap {
+                position: relative;
+                margin-bottom: 0;
+            }
+            .search-icon {
+                position: absolute;
+                left: 12px;
+                top: 50%;
+                transform: translateY(-50%);
+                color: var(--muted);
+                font-family: var(--mono);
+                font-size: 13px;
+                pointer-events: none;
+            }
+            .search-input {
+                width: 100%;
+                background: var(--surface);
+                border: 1px solid var(--border);
+                border-bottom: none;
+                color: var(--text);
+                font-family: var(--mono);
+                font-size: 12px;
+                padding: 9px 12px 9px 32px;
+                outline: none;
+                transition: border-color 0.15s;
+            }
+            .search-input:focus {
+                border-color: var(--border-hover);
+            }
+            .search-input::placeholder {
+                color: #3a3d45;
+            }
+
+            /* ─── TABLE ─── */
+            .table-wrap {
+                overflow-x: auto;
+                border: 1px solid var(--border);
+            }
+
+            table {
+                width: 100%;
+                border-collapse: collapse;
+                font-family: var(--mono);
+                font-size: 12px;
+            }
+
+            thead tr {
+                background: var(--surface2);
+                border-bottom: 1px solid var(--border);
+            }
+
+            th {
+                padding: 10px 16px;
+                text-align: left;
+                font-size: 10px;
+                font-weight: 600;
+                letter-spacing: 0.12em;
+                text-transform: uppercase;
+                color: var(--muted);
+                white-space: nowrap;
+                cursor: pointer;
+                user-select: none;
+                transition: color 0.15s;
+            }
+            th:hover {
+                color: var(--text);
+            }
+            th .sort-arrow {
+                margin-left: 4px;
+                opacity: 0.4;
+            }
+            th.sorted .sort-arrow {
+                opacity: 1;
+                color: var(--accent);
+            }
+
+            tbody tr {
+                border-bottom: 1px solid var(--border);
+                transition: background 0.1s;
+            }
+            tbody tr:last-child {
+                border-bottom: none;
+            }
+            tbody tr:hover {
+                background: var(--surface2);
+            }
+
+            td {
+                padding: 11px 16px;
+                color: var(--text);
+                white-space: nowrap;
+            }
+
+            .td-asset {
+                color: var(--accent);
+                font-weight: 600;
+            }
+            .td-name {
+                color: var(--text);
+            }
+            .td-location {
+                color: var(--muted);
+            }
+            .td-time {
+                color: #3d4149;
+                font-size: 11px;
+            }
+            .td-id {
+                color: #3a3d45;
+                font-size: 10px;
+            }
+            .td-note {
+                color: var(--muted);
+                font-size: 11px;
+                max-width: 160px;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+
+            .badge-active {
+                display: inline-block;
+                padding: 2px 8px;
+                font-size: 10px;
+                font-weight: 600;
+                letter-spacing: 0.08em;
+                text-transform: uppercase;
+                background: rgba(255, 179, 71, 0.12);
+                color: var(--warn);
+                border: 1px solid rgba(255, 179, 71, 0.3);
+            }
+
+            .table-footer {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                padding: 10px 16px;
+                border: 1px solid var(--border);
+                border-top: none;
+                background: var(--surface2);
+                font-family: var(--mono);
+                font-size: 11px;
+                color: var(--muted);
+            }
+            .table-footer span {
+                color: var(--accent);
+            }
+
+            /* ─── EMPTY STATE ─── */
+            .empty-state {
+                text-align: center;
+                padding: 40px 0;
+                font-family: var(--mono);
+                color: var(--muted);
+                font-size: 12px;
+                letter-spacing: 0.08em;
+            }
+            .empty-state .big {
+                font-size: 28px;
+                display: block;
+                margin-bottom: 10px;
+                opacity: 0.3;
+            }
+
+            /* ─── TOAST ─── */
+            #toast {
+                position: fixed;
+                bottom: 24px;
+                right: 24px;
+                padding: 12px 20px;
+                font-family: var(--mono);
+                font-size: 12px;
+                letter-spacing: 0.06em;
+                z-index: 10000;
+                transform: translateY(20px);
+                opacity: 0;
+                transition: all 0.2s ease;
+                pointer-events: none;
+                max-width: 320px;
+            }
+            #toast.show {
+                transform: translateY(0);
+                opacity: 1;
+            }
+            #toast.success {
+                background: var(--success);
+                color: #0e0f11;
+            }
+            #toast.error {
+                background: var(--danger);
+                color: #fff;
+            }
+            #toast.info {
+                background: var(--info);
+                color: #0e0f11;
+            }
+
+            .spinner {
+                display: inline-block;
+                width: 12px;
+                height: 12px;
+                border: 2px solid rgba(0, 0, 0, 0.2);
+                border-top-color: currentColor;
+                border-radius: 50%;
+                animation: spin 0.7s linear infinite;
+                vertical-align: middle;
+            }
+            @keyframes spin {
+                to {
+                    transform: rotate(360deg);
+                }
+            }
+
+            /* ─── STATUS DOT ─── */
+            .status-dot {
+                width: 6px;
+                height: 6px;
+                background: var(--success);
+                border-radius: 50%;
+                box-shadow: 0 0 8px var(--success);
+                animation: pulse 2s ease-in-out infinite;
+            }
+            @keyframes pulse {
+                0%,
+                100% {
+                    opacity: 1;
+                }
+                50% {
+                    opacity: 0.4;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <header>
+            <div class="logo-mark">
+                <svg viewBox="0 0 12 12">
+                    <rect x="1" y="1" width="4" height="4" />
+                    <rect x="7" y="1" width="4" height="4" />
+                    <rect x="1" y="7" width="4" height="4" />
+                    <rect x="7" y="7" width="4" height="4" />
+                </svg>
+            </div>
+            <h1>Asset Checkout</h1>
+            <span class="admin-badge">Admin</span>
+            <div class="header-right">
+                <div class="status-dot"></div>
+                <a href="index.html" class="nav-link">← Checkout</a>
+            </div>
+        </header>
+
+        <main>
+            <!-- Stats -->
+            <div class="stats-row">
+                <div class="stat-card active">
+                    <div class="stat-label">Currently Out</div>
+                    <div class="stat-value" id="stat-active">—</div>
+                </div>
+                <div class="stat-card total">
+                    <div class="stat-label">Total Records</div>
+                    <div class="stat-value" id="stat-total">—</div>
+                </div>
+                <div class="stat-card today">
+                    <div class="stat-label">Returned Today</div>
+                    <div class="stat-value" id="stat-today">—</div>
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="actions-row">
+                <button
+                    class="btn btn-save"
+                    id="btn-save"
+                    onclick="handleSave()"
+                >
+                    <svg
+                        width="12"
+                        height="12"
+                        viewBox="0 0 12 12"
+                        fill="currentColor"
+                    >
+                        <path
+                            d="M10 1H3L1 3v7a1 1 0 001 1h8a1 1 0 001-1V2a1 1 0 00-1-1zm-4 9H4V7h2v3zm3 0H7V7H5V6h4v4zm0-5H3V2h6v3z"
+                        />
+                    </svg>
+                    Save to Server
+                </button>
+                <button
+                    class="btn btn-download"
+                    id="btn-download"
+                    onclick="handleDownload()"
+                >
+                    <svg
+                        width="12"
+                        height="12"
+                        viewBox="0 0 12 12"
+                        fill="currentColor"
+                    >
+                        <path d="M6 8L3 5h2V1h2v4h2L6 8zm-4 2h8v1H2v-1z" />
+                    </svg>
+                    Download Excel
+                </button>
+                <button
+                    class="btn btn-refresh"
+                    id="btn-refresh"
+                    onclick="loadAll()"
+                >
+                    <svg
+                        width="12"
+                        height="12"
+                        viewBox="0 0 12 12"
+                        fill="currentColor"
+                    >
+                        <path
+                            d="M10.5 6A4.5 4.5 0 016 10.5 4.5 4.5 0 011.5 6 4.5 4.5 0 016 1.5v1A3.5 3.5 0 002.5 6 3.5 3.5 0 006 9.5 3.5 3.5 0 009.5 6H8l2-2 2 2h-1.5z"
+                        />
+                    </svg>
+                    Refresh
+                </button>
+            </div>
+
+            <!-- Daily Table -->
+            <div class="table-section">
+                <div class="section-header">
+                    <span class="section-label"
+                        >Daily — Currently Checked Out</span
+                    >
+                    <div class="section-divider"></div>
+                    <span
+                        class="section-label"
+                        id="daily-count"
+                        style="color: var(--warn)"
+                        >0 active</span
+                    >
+                </div>
+
+                <div class="search-wrap">
+                    <span class="search-icon">/</span>
+                    <input
+                        class="search-input"
+                        id="daily-search"
+                        type="text"
+                        placeholder="Filter by name, asset, or location..."
+                        oninput="filterDaily()"
+                    />
+                </div>
+
+                <div class="table-wrap">
+                    <table id="daily-table">
+                        <thead>
+                            <tr>
+                                <th onclick="sortTable('daily', 'name')">
+                                    Name <span class="sort-arrow">↕</span>
+                                </th>
+                                <th onclick="sortTable('daily', 'asset')">
+                                    Asset <span class="sort-arrow">↕</span>
+                                </th>
+                                <th onclick="sortTable('daily', 'location')">
+                                    Location <span class="sort-arrow">↕</span>
+                                </th>
+                                <th onclick="sortTable('daily', 'checkout')">
+                                    Checked Out
+                                    <span class="sort-arrow">↕</span>
+                                </th>
+                                <th>Status</th>
+                                <th>ID</th>
+                            </tr>
+                        </thead>
+                        <tbody id="daily-body">
+                            <tr>
+                                <td colspan="6">
+                                    <div class="empty-state">
+                                        <span class="big">◌</span>Loading…
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="table-footer">
+                    <span><span id="daily-shown">0</span> records shown</span>
+                    <span style="color: var(--muted)"
+                        >Last updated: <span id="daily-refresh">—</span></span
+                    >
+                </div>
+            </div>
+
+            <!-- Master Log Table -->
+            <div class="table-section">
+                <div class="section-header">
+                    <span class="section-label">Master Log — Full History</span>
+                    <div class="section-divider"></div>
+                    <span
+                        class="section-label"
+                        id="log-count"
+                        style="color: var(--info)"
+                        >0 records</span
+                    >
+                </div>
+
+                <div class="search-wrap">
+                    <span class="search-icon">/</span>
+                    <input
+                        class="search-input"
+                        id="log-search"
+                        type="text"
+                        placeholder="Filter by name, asset, or location..."
+                        oninput="filterLog()"
+                    />
+                </div>
+
+                <div class="table-wrap">
+                    <table id="log-table">
+                        <thead>
+                            <tr>
+                                <th onclick="sortTable('log', 'name')">
+                                    Name <span class="sort-arrow">↕</span>
+                                </th>
+                                <th onclick="sortTable('log', 'asset')">
+                                    Asset <span class="sort-arrow">↕</span>
+                                </th>
+                                <th onclick="sortTable('log', 'location')">
+                                    Location <span class="sort-arrow">↕</span>
+                                </th>
+                                <th onclick="sortTable('log', 'checkout')">
+                                    Checked Out
+                                    <span class="sort-arrow">↕</span>
+                                </th>
+                                <th onclick="sortTable('log', 'returned_at')">
+                                    Returned <span class="sort-arrow">↕</span>
+                                </th>
+                                <th>Note</th>
+                            </tr>
+                        </thead>
+                        <tbody id="log-body">
+                            <tr>
+                                <td colspan="6">
+                                    <div class="empty-state">
+                                        <span class="big">◌</span>Loading…
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="table-footer">
+                    <span><span id="log-shown">0</span> records shown</span>
+                    <span style="color: var(--muted)"
+                        >Last updated: <span id="log-refresh">—</span></span
+                    >
+                </div>
+            </div>
+        </main>
+
+        <div id="toast"></div>
+
+        <script>
+            const API = "http://localhost:3000";
+
+            let dailyData = [];
+            let logData = [];
+            let sortState = {
+                daily: { col: null, dir: 1 },
+                log: { col: null, dir: 1 },
+            };
+
+            // ─── LOAD ALL ───
+            async function loadAll() {
+                await Promise.all([loadDaily(), loadLog()]);
+            }
+
+            async function loadDaily() {
+                try {
+                    const res = await fetch(`${API}/checkedout`);
+                    if (!res.ok) throw new Error();
+                    dailyData = await res.json();
+                    updateStats();
+                    filterDaily();
+                    document.getElementById("daily-refresh").textContent =
+                        nowTime();
+                } catch {
+                    document.getElementById("daily-body").innerHTML =
+                        `<tr><td colspan="6"><div class="empty-state"><span class="big">!</span>Could not reach API</div></td></tr>`;
+                }
+            }
+
+            async function loadLog() {
+                try {
+                    const res = await fetch(`${API}/masterlog`);
+                    if (!res.ok) throw new Error();
+                    logData = await res.json();
+                    filterLog();
+                    document.getElementById("log-refresh").textContent =
+                        nowTime();
+                } catch {
+                    document.getElementById("log-body").innerHTML =
+                        `<tr><td colspan="6"><div class="empty-state"><span class="big">!</span>Could not reach API — ensure /masterlog route exists</div></td></tr>`;
+                }
+            }
+
+            // ─── STATS ───
+            function updateStats() {
+                document.getElementById("stat-active").textContent =
+                    dailyData.length;
+                document.getElementById("stat-total").textContent =
+                    logData.length;
+
+                const today = new Date().toDateString();
+                const returnedToday = logData.filter((r) => {
+                    if (!r.returned_at) return false;
+                    return new Date(r.returned_at).toDateString() === today;
+                }).length;
+                document.getElementById("stat-today").textContent =
+                    returnedToday;
+            }
+
+            // ─── FILTER DAILY ───
+            function filterDaily() {
+                const q = document
+                    .getElementById("daily-search")
+                    .value.toLowerCase()
+                    .trim();
+                const filtered = q
+                    ? dailyData.filter(
+                          (r) =>
+                              (r.name || "").toLowerCase().includes(q) ||
+                              (r.asset || "").toLowerCase().includes(q) ||
+                              (r.location || "").toLowerCase().includes(q),
+                      )
+                    : [...dailyData];
+
+                document.getElementById("daily-count").textContent =
+                    `${dailyData.length} active`;
+                document.getElementById("daily-shown").textContent =
+                    filtered.length;
+                renderDaily(filtered);
+            }
+
+            function renderDaily(rows) {
+                const body = document.getElementById("daily-body");
+                if (!rows.length) {
+                    body.innerHTML = `<tr><td colspan="6"><div class="empty-state"><span class="big">⊘</span>${document.getElementById("daily-search").value ? "No matching records" : "No assets currently checked out"}</div></td></tr>`;
+                    return;
+                }
+                body.innerHTML = rows
+                    .map(
+                        (r) => `
+                    <tr>
+                        <td class="td-name">${esc(r.name)}</td>
+                        <td class="td-asset">${esc(r.asset)}</td>
+                        <td class="td-location">${esc(r.location)}</td>
+                        <td class="td-time">${fmtDate(r.checkout)}</td>
+                        <td><span class="badge-active">Out</span></td>
+                        <td class="td-id">${(r.id || "").slice(0, 8)}</td>
+                    </tr>
+                `,
+                    )
+                    .join("");
+            }
+
+            // ─── FILTER LOG ───
+            function filterLog() {
+                const q = document
+                    .getElementById("log-search")
+                    .value.toLowerCase()
+                    .trim();
+                const filtered = q
+                    ? logData.filter(
+                          (r) =>
+                              (r.name || "").toLowerCase().includes(q) ||
+                              (r.asset || "").toLowerCase().includes(q) ||
+                              (r.location || "").toLowerCase().includes(q),
+                      )
+                    : [...logData];
+
+                document.getElementById("log-count").textContent =
+                    `${logData.length} records`;
+                document.getElementById("log-shown").textContent =
+                    filtered.length;
+                updateStats();
+                renderLog(filtered);
+            }
+
+            function renderLog(rows) {
+                const body = document.getElementById("log-body");
+                if (!rows.length) {
+                    body.innerHTML = `<tr><td colspan="6"><div class="empty-state"><span class="big">⊘</span>${document.getElementById("log-search").value ? "No matching records" : "No history yet"}</div></td></tr>`;
+                    return;
+                }
+                body.innerHTML = rows
+                    .map(
+                        (r) => `
+                    <tr>
+                        <td class="td-name">${esc(r.name)}</td>
+                        <td class="td-asset">${esc(r.asset)}</td>
+                        <td class="td-location">${esc(r.location)}</td>
+                        <td class="td-time">${fmtDate(r.checkout)}</td>
+                        <td class="td-time">${fmtDate(r.returned_at)}</td>
+                        <td class="td-note">${esc(r.note || "—")}</td>
+                    </tr>
+                `,
+                    )
+                    .join("");
+            }
+
+            // ─── SORT ───
+            function sortTable(table, col) {
+                const state = sortState[table];
+                if (state.col === col) state.dir *= -1;
+                else {
+                    state.col = col;
+                    state.dir = 1;
+                }
+
+                // update header arrows
+                const tbl = document.getElementById(`${table}-table`);
+                tbl.querySelectorAll("th").forEach((th) =>
+                    th.classList.remove("sorted"),
+                );
+                const ths = tbl.querySelectorAll("th");
+                const cols =
+                    table === "daily"
+                        ? [
+                              "name",
+                              "asset",
+                              "location",
+                              "checkout",
+                              "status",
+                              "id",
+                          ]
+                        : [
+                              "name",
+                              "asset",
+                              "location",
+                              "checkout",
+                              "returned_at",
+                              "note",
+                          ];
+                const idx = cols.indexOf(col);
+                if (idx >= 0) {
+                    ths[idx].classList.add("sorted");
+                    ths[idx].querySelector(".sort-arrow").textContent =
+                        state.dir === 1 ? "↑" : "↓";
+                }
+
+                const data = table === "daily" ? dailyData : logData;
+                data.sort((a, b) => {
+                    const av = a[col] || "";
+                    const bv = b[col] || "";
+                    return av < bv ? -state.dir : av > bv ? state.dir : 0;
+                });
+
+                if (table === "daily") filterDaily();
+                else filterLog();
+            }
+
+            // ─── SAVE TO SERVER ───
+            async function handleSave() {
+                const btn = document.getElementById("btn-save");
+                btn.disabled = true;
+                btn.innerHTML = '<span class="spinner"></span> Saving…';
+                try {
+                    const res = await fetch(`${API}/export/save`);
+                    const msg = await res.text();
+                    if (!res.ok) throw new Error(msg);
+                    showToast(
+                        "Saved: " + msg.replace("Export saved to ", ""),
+                        "success",
+                    );
+                } catch (err) {
+                    showToast(err.message || "Save failed", "error");
+                } finally {
+                    btn.disabled = false;
+                    btn.innerHTML = `<svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor"><path d="M10 1H3L1 3v7a1 1 0 001 1h8a1 1 0 001-1V2a1 1 0 00-1-1zm-4 9H4V7h2v3zm3 0H7V7H5V6h4v4zm0-5H3V2h6v3z"/></svg> Save to Server`;
+                }
+            }
+
+            // ─── DOWNLOAD ───
+            function handleDownload() {
+                showToast("Downloading Excel file…", "info");
+                window.location.href = `${API}/export`;
+            }
+
+            // ─── HELPERS ───
+            function fmtDate(iso) {
+                if (!iso) return "—";
+                return new Date(iso)
+                    .toLocaleString([], {
+                        month: "short",
+                        day: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                    })
+                    .toUpperCase();
+            }
+
+            function nowTime() {
+                return new Date().toLocaleTimeString([], {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                });
+            }
+
+            function esc(s) {
+                return String(s || "")
+                    .replace(/&/g, "&amp;")
+                    .replace(/</g, "&lt;")
+                    .replace(/>/g, "&gt;")
+                    .replace(/"/g, "&quot;");
+            }
+
+            function showToast(msg, type) {
+                const t = document.getElementById("toast");
+                t.textContent = msg;
+                t.className = `show ${type}`;
+                clearTimeout(t._timer);
+                t._timer = setTimeout(() => (t.className = ""), 3500);
+            }
+
+            // ─── INIT ───
+            loadAll();
+            setInterval(loadAll, 30000);
+        </script>
+    </body>
+</html>

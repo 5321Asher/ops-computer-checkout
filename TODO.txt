@@ -1,0 +1,3 @@
+light mode
+grid instead of list (idk abt this)
+switch db for excel sheet on server

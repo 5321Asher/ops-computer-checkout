@@ -1,0 +1,29 @@
+[
+  {
+    "asset": "ops-48912349",
+    "checkout": "2026-02-24T16:03:28.186Z",
+    "return": "2026-02-24T16:25:04.756Z",
+    "user": "nmola",
+    "location": "aisdj",
+    "rso": "",
+    "status": "Returned"
+  },
+  {
+    "asset": "ops-5321",
+    "checkout": "2026-02-24T16:25:33.813Z",
+    "return": "2026-02-24T16:25:34.614Z",
+    "user": "asher",
+    "location": "this si a test",
+    "rso": "",
+    "status": "Returned"
+  },
+  {
+    "asset": "ops-321873",
+    "checkout": "2026-02-24T16:27:14.918Z",
+    "return": "2026-02-24T16:27:16.379Z",
+    "user": "asher",
+    "location": "tthis ia test",
+    "rso": "",
+    "status": "Returned"
+  }
+]
