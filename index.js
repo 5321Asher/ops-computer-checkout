@@ -1,14 +1,16 @@
-import Database from "better-sqlite3";
-import express from "express";
-import cors from "cors";
-import { v4 as uuidv4 } from "uuid";
-import { readFileSync, writeFileSync, existsSync } from "fs";
+import Database from "better-sqlite3"; //Database Library
+import express from "express"; //API Creation
+import cors from "cors"; //boilerplate
+import { v4 as uuidv4 } from "uuid"; //Create UUID for items
+import { readFileSync, writeFileSync, existsSync } from "fs"; //Allow Filesystem Access
 
 const app = express();
-app.use(cors());
-const db = new Database("checkouts.db");
+app.use(cors()); //make express use cors
+const db = new Database("checkouts.db"); //checkouts.db is a sqlite db file in ./
 
-const EXCEL_PATH = "Z:\\Scripts\\equipment_checkout_v2\\checkouts.xlsx";
+const EXCEL_PATH = "Z:\\Scripts\\equipment_checkout_v2\\checkouts.xlsx"; //path to excel hard copy on server \\jus00adc1140\library
+const TICKET_LIST_PATH = "Z:\\Scripts\\equipment_checkout_v2\\ticketList.json";
+
 
 /*
  * Syncs the current DB state to the Excel file.
@@ -82,6 +84,7 @@ app.get("/", (req, res) => {
  * Checks out an asset — inserts into DB then syncs Excel.
  */
 app.post("/checkout/:user/:asset/:location", (req, res) => {
+    //get params from URL
     const { user, location } = req.params;
     let asset = req.params.asset;
 
@@ -90,19 +93,22 @@ app.post("/checkout/:user/:asset/:location", (req, res) => {
         return;
     }
 
-    asset = asset.trim();
+    asset = asset.trim(); //remove trailing whitespace
 
+    //make sure asset string starts with ops- or OPS-
     if (!asset.startsWith("OPS-") && !asset.startsWith("ops-")) {
         res.status(400).send("Asset must start with 'OPS-' or 'ops-' prefix.");
         return;
     }
 
+    //remove CSD tag after asset string if user inputted it
     if (asset.slice(-3).toLowerCase() === "csd") {
         asset = asset.slice(0, -3);
     }
 
-    asset = asset.trim();
+    asset = asset.trim(); //remove trailing whitespace
 
+    //insert into daily checkouts
     db.prepare(
         `INSERT INTO daily (name, asset, location, checkout, returned_at, id) VALUES (?, ?, ?, ?, ?, ?)`,
     ).run(user, asset, location, new Date().toISOString(), null, uuidv4());
@@ -117,28 +123,32 @@ app.post("/checkout/:user/:asset/:location", (req, res) => {
  * Checks in an asset — updates DB, moves to master_log, syncs Excel.
  */
 app.post("/checkin/:id", (req, res) => {
-    let id = req.params.id;
+    let id = req.params.id; //get params from URL
 
+    //id cannot be null
     if (!id) {
         res.status(400).send("Checkout entry blank.");
         return;
     }
 
-    id = id.trim();
+    id = id.trim(); //remove trailing whitespace
 
+    //find item in DB
     const entry = db.prepare(`SELECT * FROM daily WHERE id = ?`).get(id);
     if (!entry) {
         res.status(404).send("Checkout entry not found.");
         return;
     }
 
-    const returnTime = new Date().toISOString();
+    const returnTime = new Date().toISOString(); //current time
 
+    //change return feild to curren time
     const checkin = db.transaction(() => {
         db.prepare(`UPDATE daily SET "returned_at" = ? WHERE id = ?`).run(returnTime, id);
 
         const updated = db.prepare(`SELECT * FROM daily WHERE id = ?`).get(id);
 
+        //insert item from daily to master_log
         db.prepare(
             `INSERT INTO master_log (id, asset, checkout, returned_at, name, location, note) VALUES (?, ?, ?, ?, ?, ?, ?)`,
         ).run(
@@ -150,16 +160,16 @@ app.post("/checkin/:id", (req, res) => {
             updated.location,
             updated.notes ?? null,
         );
-
+        //delete item from daily (move to master_log)
         db.prepare(`DELETE FROM daily WHERE id = ?`).run(id);
 
         return updated;
     });
 
-    const updated = checkin();
+    const updated = checkin(); //actually call the transaction above
 
     // Update ticket list
-    const ticketListPath = "./tickets/ticketList.json";
+    const ticketListPath = TICKET_LIST_PATH;
     const ticketList = JSON.parse(readFileSync(ticketListPath, "utf-8"));
     ticketList.push({
         asset: updated.asset,
@@ -172,10 +182,14 @@ app.post("/checkin/:id", (req, res) => {
     });
     writeFileSync(ticketListPath, JSON.stringify(ticketList, null, 2));
 
+    //sync excel in background
     res.status(200).send("Asset Returned Successfully");
     syncExcelWithRetry();
 });
 
+/*
+returns all items in daily table
+*/
 app.get("/checkedout", (req, res) => {
     try {
         const rows = db.prepare(`SELECT * FROM daily WHERE returned_at IS NULL`).all();
@@ -185,6 +199,9 @@ app.get("/checkedout", (req, res) => {
     }
 });
 
+/*
+returns all items in master_log
+*/
 app.get("/masterlog", (req, res) => {
     try {
         const rows = db.prepare(`SELECT * FROM master_log ORDER BY returned_at DESC`).all();
@@ -206,10 +223,6 @@ app.get("/export/save", async (req, res) => {
         res.status(500).send("Failed to save export: " + err.message);
     }
 });
-
-app.get("/ticketList", (req, res) => {
-  res.sendFile("C:\\Users\\VIRGONAS\\Documents\\Dev\\ops-computer-checkout-main\\tickets\\ticketList.json");
-})
 
 app.listen(3000, () => {
     console.log("Server started on port 3000");
