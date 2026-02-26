@@ -8,7 +8,7 @@
 - JS
 
 ## Setting up
-#### To setup the equipment check software simply ensure that node.js is installed on the computer, Please make sure you are connected to Global Connect Canada East to make sure the npm packages install correctly. Go to the project folder in a terminal and run `npm install`, this will install all dependencies (better-sqlite3, express, cors, uuid, and fs). After all dependencies are installed correclt in the same terminal simply run `node index.js`.
+#### To setup the equipment check software simply ensure that node.js is installed on the computer, Please make sure you are connected to Global Connect Canada East to make sure the npm packages install correctly. Go to the project folder in a terminal and run `npm install`, this will install all dependencies (better-sqlite3, express, cors, uuid, and fs). After all dependencies are installed correclt in the same terminal simply run `node index.js`. Then just open `./frontend/public/index.html` in a browser and thats it. All done.
 
 ## Backend
 #### The Backend code can be found at `./index.js`. is uses express and sqlite3 and is well commented. 

@@ -106,7 +106,9 @@ app.post("/checkout/:user/:asset/:location", (req, res) => {
     !asset.startsWith("rsi-") &&
     !asset.startsWith("RSI-")
   ) {
-    res.status(400).send("Asset must start with 'OPS-' or 'ops-' prefix.");
+    res
+      .status(400)
+      .send("Asset must start with 'OPS-', 'ops-', 'rsi-', or 'RSI-' prefix.");
     return;
   }
 
