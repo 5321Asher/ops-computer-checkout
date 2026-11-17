@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Asset Checkout</title>
+        <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+        <link rel="stylesheet" href="style.css" />
+        <script type="module" src="checkout.js"></script>
+    </head>
+    <body>
+        <header>
+            <div class="logo-mark">
+                <svg viewBox="0 0 12 12" aria-hidden="true">
+                    <rect x="1" y="1" width="4" height="4" />
+                    <rect x="7" y="1" width="4" height="4" />
+                    <rect x="1" y="7" width="4" height="4" />
+                    <rect x="7" y="7" width="4" height="4" />
+                </svg>
+            </div>
+            <h1>Asset Checkout</h1>
+            <span class="location-name" id="location-name"></span>
+            <div class="header-right">
+                <a class="nav-button" href="admin.html">
+                    <svg viewBox="0 0 12 12" aria-hidden="true">
+                        <rect x="1" y="1" width="4" height="4" />
+                        <rect x="7" y="1" width="4" height="4" />
+                        <rect x="1" y="7" width="4" height="4" />
+                        <rect x="7" y="7" width="4" height="4" />
+                    </svg>
+                    Admin
+                </a>
+            </div>
+        </header>
+
+        <main>
+            <h2 class="section-label">New Checkout</h2>
+            <form class="checkout-form" id="checkout-form">
+                <div class="field">
+                    <label for="f-user">Customer</label>
+                    <input type="text" id="f-user" name="name" placeholder="John Smith" autocomplete="off" maxlength="100" required />
+                </div>
+                <div class="field">
+                    <label for="f-asset">Asset</label>
+                    <input type="text" id="f-asset" name="asset" placeholder="OPS-1234 or RSI-1234" autocomplete="off" maxlength="50" required />
+                </div>
+                <div class="field">
+                    <label for="f-location">Location</label>
+                    <input type="text" id="f-location" name="location" placeholder="Courtroom 3" autocomplete="off" maxlength="100" required />
+                </div>
+                <button class="btn-checkout" type="submit" id="submit-btn">Check Out</button>
+            </form>
+
+            <h2 class="section-label">Checked Out Assets</h2>
+            <div class="search-wrap">
+                <span class="search-icon" aria-hidden="true">/</span>
+                <label for="search" class="visually-hidden">Search checked-out assets</label>
+                <input class="search-input" type="search" id="search" placeholder="Search by name, asset, or location..." autocomplete="off" />
+            </div>
+            <div class="stats-bar">
+                <span><span class="count" id="count">—</span> <span id="count-word">items</span></span>
+                <span class="separator">|</span>
+                <span>last refresh <span id="refresh-time">—</span></span>
+            </div>
+            <div id="asset-list" aria-live="polite">
+                <div class="empty-state"><span class="big">⊘</span>Loading assets...</div>
+            </div>
+        </main>
+
+        <div id="toast" role="status" aria-live="polite"></div>
+    </body>
+</html>

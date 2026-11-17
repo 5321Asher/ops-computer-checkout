@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Asset Checkout — Admin</title>
+        <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+        <link rel="stylesheet" href="style.css" />
+        <script type="module" src="admin.js"></script>
+    </head>
+    <body class="admin">
+        <header>
+            <div class="logo-mark">
+                <svg viewBox="0 0 12 12" aria-hidden="true">
+                    <rect x="1" y="1" width="4" height="4" />
+                    <rect x="7" y="1" width="4" height="4" />
+                    <rect x="1" y="7" width="4" height="4" />
+                    <rect x="7" y="7" width="4" height="4" />
+                </svg>
+            </div>
+            <h1>Asset Checkout</h1>
+            <span class="admin-badge">Admin</span>
+            <span class="location-name" id="location-name"></span>
+            <div class="header-right">
+                <div class="status-dot" id="status-dot" title="Connected"></div>
+                <a href="/" class="nav-link">← Checkout</a>
+            </div>
+        </header>
+
+        <main>
+            <div class="stats-row">
+                <div class="stat-card active">
+                    <div class="stat-label">Currently Out</div>
+                    <div class="stat-value" id="stat-active">—</div>
+                </div>
+                <div class="stat-card total">
+                    <div class="stat-label">Total Records</div>
+                    <div class="stat-value" id="stat-total">—</div>
+                </div>
+                <div class="stat-card today">
+                    <div class="stat-label">Returned Today</div>
+                    <div class="stat-value" id="stat-today">—</div>
+                </div>
+            </div>
+
+            <div class="actions-row">
+                <button class="btn btn-save" id="btn-save" type="button">
+                    <svg viewBox="0 0 12 12" aria-hidden="true"><path d="M10 1H3L1 3v7a1 1 0 001 1h8a1 1 0 001-1V2a1 1 0 00-1-1zm-4 9H4V7h2v3zm3 0H7V7H5V6h4v4zm0-5H3V2h6v3z" /></svg>
+                    <span>Save to Server</span>
+                </button>
+                <a class="btn btn-download" id="btn-download" href="/api/export" download>
+                    <svg viewBox="0 0 12 12" aria-hidden="true"><path d="M6 8L3 5h2V1h2v4h2L6 8zm-4 2h8v1H2v-1z" /></svg>
+                    <span>Download Excel</span>
+                </a>
+                <button class="btn btn-refresh" id="btn-refresh" type="button">
+                    <svg viewBox="0 0 12 12" aria-hidden="true"><path d="M10.5 6A4.5 4.5 0 016 10.5 4.5 4.5 0 011.5 6 4.5 4.5 0 016 1.5v1A3.5 3.5 0 002.5 6 3.5 3.5 0 006 9.5 3.5 3.5 0 009.5 6H8l2-2 2 2h-1.5z" /></svg>
+                    <span>Refresh</span>
+                </button>
+            </div>
+            <div class="share-status" id="share-status" aria-live="polite">
+                <span id="excel-status">Excel copy: checking…</span>
+                <span id="tickets-status">Ticket list: checking…</span>
+            </div>
+
+            <section class="table-section">
+                <div class="section-header">
+                    <h2 class="section-label">Daily — Currently Checked Out</h2>
+                    <div class="section-divider"></div>
+                    <span class="section-label count-active" id="daily-count">0 active</span>
+                </div>
+                <div class="search-wrap">
+                    <span class="search-icon" aria-hidden="true">/</span>
+                    <label for="daily-search" class="visually-hidden">Filter checked-out items</label>
+                    <input class="search-input" id="daily-search" type="search" placeholder="Filter by name, asset, or location..." autocomplete="off" />
+                </div>
+                <div class="table-wrap">
+                    <table id="daily-table">
+                        <thead>
+                            <tr>
+                                <th data-sort="name"><button type="button">Name<span class="sort-arrow">↕</span></button></th>
+                                <th data-sort="asset"><button type="button">Asset<span class="sort-arrow">↕</span></button></th>
+                                <th data-sort="location"><button type="button">Location<span class="sort-arrow">↕</span></button></th>
+                                <th data-sort="checkout"><button type="button">Checked Out<span class="sort-arrow">↕</span></button></th>
+                                <th>Status</th>
+                                <th>ID</th>
+                            </tr>
+                        </thead>
+                        <tbody id="daily-body">
+                            <tr><td colspan="6"><div class="empty-state"><span class="big">◌</span>Loading…</div></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="table-footer">
+                    <span><span class="count" id="daily-shown">0</span> records shown</span>
+                    <span>Last updated: <span id="daily-refresh">—</span></span>
+                </div>
+            </section>
+
+            <section class="table-section">
+                <div class="section-header">
+                    <h2 class="section-label">Master Log — Full History</h2>
+                    <div class="section-divider"></div>
+                    <span class="section-label count-total" id="log-count">0 records</span>
+                </div>
+                <div class="search-wrap">
+                    <span class="search-icon" aria-hidden="true">/</span>
+                    <label for="log-search" class="visually-hidden">Filter history</label>
+                    <input class="search-input" id="log-search" type="search" placeholder="Filter by name, asset, or location..." autocomplete="off" />
+                </div>
+                <div class="table-wrap">
+                    <table id="log-table">
+                        <thead>
+                            <tr>
+                                <th data-sort="name"><button type="button">Name<span class="sort-arrow">↕</span></button></th>
+                                <th data-sort="asset"><button type="button">Asset<span class="sort-arrow">↕</span></button></th>
+                                <th data-sort="location"><button type="button">Location<span class="sort-arrow">↕</span></button></th>
+                                <th data-sort="checkout"><button type="button">Checked Out<span class="sort-arrow">↕</span></button></th>
+                                <th data-sort="returned_at"><button type="button">Returned<span class="sort-arrow">↕</span></button></th>
+                                <th>Note</th>
+                            </tr>
+                        </thead>
+                        <tbody id="log-body">
+                            <tr><td colspan="6"><div class="empty-state"><span class="big">◌</span>Loading…</div></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="table-footer">
+                    <span><span class="count" id="log-shown">0</span> records shown</span>
+                    <span>Last updated: <span id="log-refresh">—</span></span>
+                </div>
+            </section>
+        </main>
+
+        <div id="toast" role="status" aria-live="polite"></div>
+    </body>
+</html>

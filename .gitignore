@@ -1,0 +1,9 @@
+node_modules/
+
+# Checkout records and each location's settings: never commit them.
+checkouts.db
+checkouts.db-journal
+checkouts-*.db
+config.json
+pending-tickets*.json
+*.tmp

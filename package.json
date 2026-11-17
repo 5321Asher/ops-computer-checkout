@@ -1,7 +1,7 @@
 {
     "name": "ops-computer-checkout",
-    "version": "1.0.0",
-    "description": "this is the Dev repo for the new ops checkout system",
+    "version": "2.0.0",
+    "description": "Check OPS and RSI computers in and out at a location, with an Excel copy and a ticket list on the server share.",
     "homepage": "https://github.com/5321Asher/ops-computer-checkout#readme",
     "bugs": {
         "url": "https://github.com/5321Asher/ops-computer-checkout/issues"
@@ -11,17 +11,25 @@
         "url": "git+https://github.com/5321Asher/ops-computer-checkout.git"
     },
     "license": "ISC",
-    "author": "",
+    "author": "Asher Virgona",
+    "private": true,
     "type": "module",
-    "main": "index.js",
+    "main": "server.js",
     "scripts": {
-        "test": "echo \"Error: no test specified\" && exit 1"
+        "start": "node --disable-warning=ExperimentalWarning server.js",
+        "test": "node --disable-warning=ExperimentalWarning --test \"test/*.test.js\"",
+        "clear-db": "node --disable-warning=ExperimentalWarning scripts/clear-db.js"
+    },
+    "engines": {
+        "node": ">=22.13.0"
     },
     "dependencies": {
-        "better-sqlite3": "^12.6.2",
-        "cors": "^2.8.6",
-        "exceljs": "^4.4.0",
-        "express": "^5.2.1",
-        "uuid": "^13.0.0"
+        "exceljs": "^4.4.0"
+    },
+    "overrides": {
+        "uuid": "^11.1.1",
+        "tmp": "^0.2.7",
+        "brace-expansion@1": "^1.1.22",
+        "brace-expansion@2": "^2.1.8"
     }
 }
