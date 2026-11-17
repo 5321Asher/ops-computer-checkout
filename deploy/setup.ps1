@@ -4,9 +4,11 @@
 #      exists (keeping its Excel file, ticket list and tickets.txt), and points the copy at it:
 #      code\config.json for the program, and createTickets.ps1.
 #   3. Copies the location's program (its code\ folder) to this computer, C:\equipment_checkout
-#      unless you choose another folder. Records already there (checkouts.db) are kept.
+#      unless you choose another folder, and installs its modules with npm. Records already
+#      there (checkouts.db) are kept.
 #
 # Run it from the share: right-click setup.ps1, Run with PowerShell.
+# Connect to Global Connect first: npm needs it to download the modules.
 # Works with Windows PowerShell 5.1 and PowerShell 7. Keep this file plain ASCII.
 
 $ErrorActionPreference = 'Stop'
@@ -50,6 +52,22 @@ function Copy-Folder($from, $to, [string[]]$options) {
     $global:LASTEXITCODE = 0
 }
 
+# Whether npm can reach the npm registry (it needs Global Connect). npm.cmd rather than npm, so
+# PowerShell's script execution policy can't block npm's own .ps1 launcher.
+function Test-NpmRegistry {
+    $previous = $ErrorActionPreference
+    $ErrorActionPreference = 'Continue' # npm prints notices on stderr; they aren't failures
+    try {
+        & npm.cmd ping 2>&1 | Out-Null
+        return $LASTEXITCODE -eq 0
+    } catch {
+        return $false
+    } finally {
+        $ErrorActionPreference = $previous
+        $global:LASTEXITCODE = 0
+    }
+}
+
 function Write-TextFile($path, $text) {
     [System.IO.File]::WriteAllText($path, $text, $Utf8NoBom)
 }
@@ -90,6 +108,14 @@ function Main {
         throw "This computer has Node.js $nodeVersion, but Equipment Checkout needs $MinNodeVersion or newer. Install the LTS version from https://nodejs.org, then run setup again."
     }
     Write-Host "Node.js $nodeVersion is installed."
+    if (-not (Get-Command npm.cmd -ErrorAction SilentlyContinue)) {
+        throw 'npm is missing (it comes with Node.js). Reinstall the LTS version from https://nodejs.org, then run setup again.'
+    }
+    # Checked before anything is changed, so a missing connection can't leave a half-finished setup.
+    if (-not (Test-NpmRegistry)) {
+        throw "npm can't reach the npm registry to download the program's modules. Connect to Global Connect, then run setup again. Nothing was changed."
+    }
+    Write-Host 'npm can reach the npm registry.'
 
     if (Test-ProgramRunning) {
         throw 'Equipment Checkout is running on this computer. Close its window, then run setup again.'
@@ -161,18 +187,21 @@ function Main {
         Copy-Item -LiteralPath $database -Destination $backup
         Write-Host "The records already in $install are kept. A copy was saved as $backup"
     }
-    # /MIR replaces the program files; /XF leaves the records alone (they are neither copied nor deleted).
-    Copy-Folder $LocationCode $install (@('/MIR', '/XF') + $RecordFiles)
+    # /MIR replaces the program files; /XF leaves the records alone (they are neither copied nor
+    # deleted). /XD node_modules: npm replaces that folder next.
+    Copy-Folder $LocationCode $install (@('/MIR', '/XD', 'node_modules', '/XF') + $RecordFiles)
 
-    if (-not (Test-Path -LiteralPath (Join-Path $install 'node_modules\exceljs'))) {
-        Write-Host 'The template has no node_modules, so installing them with npm (needs Global Connect)...'
-        Push-Location $install
-        try {
-            & npm ci --omit=dev --no-audit --no-fund | Out-Host
-            if ($LASTEXITCODE -ne 0) { throw 'npm could not install the program''s modules. Connect to Global Connect and run setup again.' }
-        } finally {
-            Pop-Location
+    # npm ci: like npm install, but installs exactly the versions in package-lock.json, so every
+    # location runs the same tested modules.
+    Write-Host 'Installing the program''s modules with npm...'
+    Push-Location $install
+    try {
+        & npm.cmd ci --omit=dev --no-audit --no-fund | Out-Host
+        if ($LASTEXITCODE -ne 0) {
+            throw 'npm could not install the program''s modules. Check the Global Connect connection, then run setup again (choose to reuse the location).'
         }
+    } finally {
+        Pop-Location
     }
 
     Write-Host ''

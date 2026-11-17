@@ -1,7 +1,8 @@
 # Publishes this repository to the share as the template that setup.ps1 copies for each location.
 # Run it on your own computer, from a copy of the repository, after changing the program:
 #     .\deploy\publish-template.ps1
-# It needs Node.js with npm, access to the npm registry (Global Connect), and write access to the share.
+# It needs write access to the share, nothing else. Only the program's own files are published (a
+# few dozen); setup.ps1 installs the modules on each computer with npm.
 #
 # Locations keep the program they have until setup.ps1 is run for them again (choosing "reuse").
 # Works with Windows PowerShell 5.1 and PowerShell 7. Keep this file plain ASCII.
@@ -16,12 +17,13 @@ $Repo = Split-Path -Parent $PSScriptRoot
 $Template = Join-Path $ShareRoot 'template'
 $Code = Join-Path $Template 'code'
 # Only what a location needs to run the program: no tests, records or settings.
+# package-lock.json is how setup.ps1 installs exactly the tested module versions.
 $ProgramFiles = @('server.js', 'package.json', 'package-lock.json', 'start.cmd', 'README.md', 'config.example.json')
 $ProgramFolders = @('lib', 'public', 'scripts')
 
 function Copy-Folder($from, $to) {
-    # /E: subfolders too. /R:2 /W:2: don't retry a locked file for ages. /MT:16: many files at once.
-    & robocopy $from $to /E /R:2 /W:2 /MT:16 /NFL /NDL /NJH /NJS /NP | Out-Host
+    # /E: subfolders too. /R:2 /W:2: don't retry a locked file for ages.
+    & robocopy $from $to /E /R:2 /W:2 /NFL /NDL /NJH /NJS /NP | Out-Host
     # robocopy exit codes 0 to 7 mean success; 8 or more mean some files couldn't be copied.
     if ($LASTEXITCODE -ge 8) { throw "Copying $from to $to failed (robocopy exit code $LASTEXITCODE)." }
     $global:LASTEXITCODE = 0
@@ -32,9 +34,12 @@ function Remove-Folder($path) {
 }
 
 function Main {
-    if (-not (Test-Path -LiteralPath $ShareRoot)) {
-        throw "Can't reach $ShareRoot. Check the network connection."
+    # The share must be reachable; equipment_checkout_v2 itself is made if it isn't there yet.
+    $shareParent = Split-Path -Parent $ShareRoot
+    if (-not (Test-Path -LiteralPath $shareParent)) {
+        throw "Can't reach $shareParent. Check the network connection."
     }
+    New-Item -ItemType Directory -Path $ShareRoot -Force | Out-Null
 
     # Which version this is, so you can tell what a location is running (code\VERSION.txt).
     $version = 'unknown (git not found)'
@@ -59,15 +64,6 @@ function Main {
     try {
         foreach ($file in $ProgramFiles) { Copy-Item -LiteralPath (Join-Path $Repo $file) -Destination $stage }
         foreach ($folder in $ProgramFolders) { Copy-Item -LiteralPath (Join-Path $Repo $folder) -Destination $stage -Recurse }
-
-        Write-Host 'Installing the modules (exact versions from package-lock.json)...'
-        Push-Location $stage
-        try {
-            & npm ci --omit=dev --no-audit --no-fund | Out-Host
-            if ($LASTEXITCODE -ne 0) { throw 'npm ci failed. Check that you are connected to Global Connect.' }
-        } finally {
-            Pop-Location
-        }
         $published = "Version: $version`r`nPublished: $(Get-Date -Format 'yyyy-MM-dd HH:mm') by $env:USERNAME on $env:COMPUTERNAME`r`n"
         [System.IO.File]::WriteAllText((Join-Path $stage 'VERSION.txt'), $published)
 

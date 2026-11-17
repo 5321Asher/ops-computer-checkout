@@ -12,7 +12,7 @@ Check OPS and RSI computers in and out at a location. Each location runs the pro
 \\jus00adc1140\library\Scripts\equipment_checkout_v2\
   setup.ps1                 sets up a location (run on the location's computer)
   template\                 what every location starts from (made by publish-template.ps1)
-    code\                   the program, with its modules already installed
+    code\                   the program's files (setup.ps1 installs its modules on each computer)
     createTickets.ps1
     ticketList.json
   46-water-street\          one folder per location (made by setup.ps1)
@@ -30,8 +30,8 @@ Everything refers to the share by its full `\\jus00adc1140\library` path, never 
 
 ## What you need
 
-- **On each location's computer:** [Node.js](https://nodejs.org), version 22.13 or newer (the current LTS is best). Nothing else: no npm and no Global Connect.
-- **To publish the template:** a copy of this repository, Node.js with npm, Global Connect (for the npm registry), and write access to the share.
+- **On each location's computer:** [Node.js](https://nodejs.org), version 22.13 or newer (the current LTS is best; npm comes with it). During setup it also needs Global Connect, so npm can download the program's modules. After that, the program runs without it.
+- **To publish the template:** a copy of this repository and write access to the share.
 
 ## Publishing the template
 
@@ -42,13 +42,13 @@ git pull
 .\deploy\publish-template.ps1
 ```
 
-This copies only the program files, installs the exact module versions from `package-lock.json` (`npm ci`), and swaps the result into `template\code` in one step, so a failure partway never leaves a half-written template. It writes `code\VERSION.txt` (the git commit and date), so you can always tell what a location is running. It also copies `setup.ps1` and the template's `createTickets.ps1` to the share.
+This copies only the program's own files (a few dozen; no `node_modules`) and swaps them into `template\code` in one step, so a failure partway never leaves a half-written template. It writes `code\VERSION.txt` (the git commit and date), so you can always tell what a location is running. It also copies `setup.ps1` and the template's `createTickets.ps1` to the share.
 
 Publishing doesn't change any location. A location keeps its program until `setup.ps1` is run there again.
 
 ## Setting up a location
 
-On the location's computer, open `\\jus00adc1140\library\Scripts\equipment_checkout_v2\`, then right-click `setup.ps1` and choose **Run with PowerShell**. It:
+On the location's computer, connect to Global Connect, open `\\jus00adc1140\library\Scripts\equipment_checkout_v2\`, then right-click `setup.ps1` and choose **Run with PowerShell**. It first checks that Node.js is new enough and that npm can reach the npm registry, and stops before changing anything if not. Then it:
 
 1. Asks for the location's name, e.g. `46 Water Street`, which names its folder: `46-water-street`.
 2. Copies `template\` to that folder and points it at itself. It writes `code\config.json` and fills in the folder path in `createTickets.ps1`.
@@ -56,6 +56,7 @@ On the location's computer, open `\\jus00adc1140\library\Scripts\equipment_check
 3. Asks where to put the program on this computer (default `C:\equipment_checkout`) and copies the location's `code\` folder there.
    - Records already in that folder (`checkouts.db`) are kept, and a copy is saved first as `checkouts-before-setup-<date>.db`.
    - It refuses to use a folder that has unrelated files in it.
+4. Installs the program's modules there with `npm ci`: like `npm install`, but exactly the versions in `package-lock.json`, so every location runs the same tested modules.
 
 Close the program before running setup; setup will tell you if it's still running.
 
