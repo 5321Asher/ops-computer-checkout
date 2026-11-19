@@ -115,6 +115,12 @@ export async function launchBrowser(executable) {
         await send('Input.dispatchMouseEvent', { type, x: box.x, y: box.y, button: 'left', clickCount: 1 });
       }
     },
+    // A real key press, e.g. press('Escape'), which closes a dialog where a made-up keydown event can't.
+    async press(key) {
+      for (const type of ['keyDown', 'keyUp']) {
+        await send('Input.dispatchKeyEvent', { type, key, code: key, windowsVirtualKeyCode: { Escape: 27, Enter: 13 }[key] });
+      }
+    },
     // Replaces a field's text, typed as if from the keyboard.
     async type(selector, text) {
       await page.eval(`(() => {

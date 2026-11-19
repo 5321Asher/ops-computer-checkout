@@ -3,7 +3,7 @@
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
 import { once } from 'node:events';
-import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
+import { existsSync, writeFileSync } from 'node:fs';
 import net from 'node:net';
 import { join } from 'node:path';
 import { test } from 'node:test';
@@ -31,25 +31,25 @@ async function runServer(home, port) {
 
 function homeWithConfig(config = {}) {
   const home = tempDir();
-  mkdirSync(join(home, 'share'));
-  writeFileSync(join(home, 'config.json'), `﻿${JSON.stringify({ location: 'Test Location', locationFolder: join(home, 'share'), ...config })}`);
+  writeFileSync(join(home, 'config.json'), `﻿${JSON.stringify({ location: 'Test Location', ...config })}`);
   return home;
 }
 
-test('without config.json the program explains what to do, and stops', async () => {
+test('without config.json the program still starts, with no location shown', async () => {
   const { child, output } = await runServer(tempDir(), await freePort());
-  const [code] = await once(child, 'exit');
-  assert.equal(code, 1);
-  assert.match(output(), /There is no config\.json .* Run setup\.ps1/);
+  await waitFor(() => output().includes('Keep this window open'), { message: 'start-up', timeout: 10_000 });
+  assert.match(output(), /Equipment Checkout is running\./);
+  child.kill('SIGINT');
+  await once(child, 'exit');
 });
 
 test('a config.json with a mistake is explained', async () => {
   const home = tempDir();
-  writeFileSync(join(home, 'config.json'), '{ "locationFolder": "\\\\server\\share" }'); // unescaped \ in JSON
+  writeFileSync(join(home, 'config.json'), '{ location: 46 Water Street }');
   const { child, output } = await runServer(home, await freePort());
   const [code] = await once(child, 'exit');
   assert.equal(code, 1);
-  assert.match(output(), /config\.json is not valid JSON.*each \\ in a path is written \\\\/);
+  assert.match(output(), /config\.json is not valid JSON.*It should look like \{ "location": "46 Water Street" \}/);
 });
 
 test('it starts, saves the Excel copy, serves the pages, and stops cleanly on Ctrl+C', { skip: process.platform === 'win32' }, async () => {
@@ -62,7 +62,7 @@ test('it starts, saves the Excel copy, serves the pages, and stops cleanly on Ct
 
   const page = await fetch(`http://localhost:${port}/`);
   assert.equal(page.status, 200);
-  await waitFor(() => existsSync(join(home, 'share', 'checkouts.xlsx')), { message: 'the Excel copy' });
+  await waitFor(() => existsSync(join(home, 'checkouts.xlsx')), { message: 'the Excel copy' });
   assert.ok(existsSync(join(home, 'checkouts.db')));
 
   child.kill('SIGINT');

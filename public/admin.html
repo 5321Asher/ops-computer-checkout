@@ -46,7 +46,7 @@
             <div class="actions-row">
                 <button class="btn btn-save" id="btn-save" type="button">
                     <svg viewBox="0 0 12 12" aria-hidden="true"><path d="M10 1H3L1 3v7a1 1 0 001 1h8a1 1 0 001-1V2a1 1 0 00-1-1zm-4 9H4V7h2v3zm3 0H7V7H5V6h4v4zm0-5H3V2h6v3z" /></svg>
-                    <span>Save to Server</span>
+                    <span>Save Excel</span>
                 </button>
                 <a class="btn btn-download" id="btn-download" href="/api/export" download>
                     <svg viewBox="0 0 12 12" aria-hidden="true"><path d="M6 8L3 5h2V1h2v4h2L6 8zm-4 2h8v1H2v-1z" /></svg>
@@ -57,8 +57,8 @@
                     <span>Refresh</span>
                 </button>
             </div>
-            <div class="share-status" id="share-status" aria-live="polite">
-                <span id="excel-status">Excel copy: checking…</span>
+            <div class="file-status" id="file-status" aria-live="polite">
+                <span id="excel-status">Excel file: checking…</span>
                 <span id="tickets-status">Ticket list: checking…</span>
             </div>
 
@@ -82,16 +82,22 @@
                                 <th data-sort="location"><button type="button">Location<span class="sort-arrow">↕</span></button></th>
                                 <th data-sort="checkout"><button type="button">Checked Out<span class="sort-arrow">↕</span></button></th>
                                 <th>Status</th>
+                                <th>Note</th>
                                 <th>ID</th>
                             </tr>
                         </thead>
                         <tbody id="daily-body">
-                            <tr><td colspan="6"><div class="empty-state"><span class="big">◌</span>Loading…</div></td></tr>
+                            <tr><td colspan="7"><div class="empty-state"><span class="big">◌</span>Loading…</div></td></tr>
                         </tbody>
                     </table>
                 </div>
                 <div class="table-footer">
-                    <span><span class="count" id="daily-shown">0</span> records shown</span>
+                    <span><span class="count" id="daily-shown">0</span> records</span>
+                    <div class="pager" id="daily-pager" hidden>
+                        <button type="button" data-page="-1">‹ Prev</button>
+                        <span id="daily-page">Page 1 of 1</span>
+                        <button type="button" data-page="1">Next ›</button>
+                    </div>
                     <span>Last updated: <span id="daily-refresh">—</span></span>
                 </div>
             </section>
@@ -125,7 +131,12 @@
                     </table>
                 </div>
                 <div class="table-footer">
-                    <span><span class="count" id="log-shown">0</span> records shown</span>
+                    <span><span class="count" id="log-shown">0</span> records</span>
+                    <div class="pager" id="log-pager" hidden>
+                        <button type="button" data-page="-1">‹ Prev</button>
+                        <span id="log-page">Page 1 of 1</span>
+                        <button type="button" data-page="1">Next ›</button>
+                    </div>
                     <span>Last updated: <span id="log-refresh">—</span></span>
                 </div>
             </section>

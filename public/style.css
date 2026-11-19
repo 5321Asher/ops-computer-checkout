@@ -11,6 +11,7 @@
     --faint: #b0ada6;
     --placeholder: #bbb9b2;
     --danger: #d93535;
+    --danger-dim: #b52b2b;
     --success: #1a9e52;
     --info: #0e7abf;
     --warn: #c47800;
@@ -397,6 +398,9 @@ main {
         border-color 0.15s,
         opacity 0.2s,
         transform 0.2s;
+}
+
+.asset-card.entering {
     animation: slideIn 0.2s ease backwards;
 }
 
@@ -429,7 +433,7 @@ main {
     gap: 8px;
 }
 
-.card-asset {
+.card-name {
     font-family: var(--mono);
     font-size: 14px;
     font-weight: 600;
@@ -477,6 +481,12 @@ main {
     overflow-wrap: anywhere;
 }
 
+.card-value.asset {
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 600;
+}
+
 .card-value.location {
     font-family: var(--mono);
     font-size: 11px;
@@ -515,6 +525,97 @@ main {
 
 .btn-return:disabled {
     cursor: wait;
+}
+
+/* ─── CONFIRM DIALOG ─── */
+/* The dialog itself is invisible; .dialog-box fills it, so clicks on the dialog are on the backdrop. */
+.confirm-dialog {
+    margin: auto;
+    padding: 0;
+    border: none;
+    background: transparent;
+    color: var(--text);
+    width: min(360px, calc(100vw - 32px));
+}
+
+.confirm-dialog::backdrop {
+    background: rgba(26, 27, 30, 0.35);
+}
+
+.dialog-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18);
+    padding: 20px 20px 20px 23px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    position: relative;
+}
+
+.dialog-box::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 3px;
+    height: 100%;
+    background: var(--danger);
+}
+
+.dialog-box .section-label {
+    margin-bottom: 0;
+}
+
+.dialog-details {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 12px 0;
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+}
+
+.dialog-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+.dialog-actions button {
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 9px 18px;
+    cursor: pointer;
+    transition:
+        background 0.15s,
+        border-color 0.15s,
+        color 0.15s;
+}
+
+.btn-cancel {
+    background: var(--surface);
+    color: var(--muted);
+    border: 1px solid var(--border);
+}
+
+.btn-cancel:hover {
+    color: var(--text);
+    border-color: var(--border-hover);
+}
+
+.btn-confirm {
+    background: var(--danger);
+    color: #ffffff;
+    border: 1px solid var(--danger);
+}
+
+.btn-confirm:hover {
+    background: var(--danger-dim);
+    border-color: var(--danger-dim);
 }
 
 /* ─── ADMIN: STATS ─── */
@@ -658,8 +759,8 @@ main {
     color: var(--text);
 }
 
-/* How the copies on the server share are doing. */
-.share-status {
+/* How the Excel file and the ticket list are doing. */
+.file-status {
     font-family: var(--mono);
     font-size: 11px;
     letter-spacing: 0.04em;
@@ -670,11 +771,11 @@ main {
     gap: 4px;
 }
 
-.share-status .ok {
+.file-status .ok {
     color: var(--success);
 }
 
-.share-status .problem {
+.file-status .problem {
     color: var(--danger);
 }
 
@@ -773,9 +874,42 @@ td {
 .td-note {
     color: var(--muted);
     font-size: 11px;
-    max-width: 160px;
+    max-width: 240px;
+}
+
+/* A note: click it to change it. */
+.note-button {
+    all: unset;
+    display: block;
+    max-width: 100%;
     overflow: hidden;
     text-overflow: ellipsis;
+    cursor: text;
+    border-bottom: 1px dashed transparent;
+    transition:
+        color 0.15s,
+        border-color 0.15s;
+}
+
+.note-button.empty {
+    color: var(--faint);
+}
+
+.note-button:hover,
+.note-button:focus-visible {
+    color: var(--text);
+    border-bottom-color: var(--border-hover);
+}
+
+.note-input {
+    width: 200px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text);
+    background: var(--surface);
+    border: 1px solid var(--accent);
+    padding: 2px 6px;
+    outline: none;
 }
 
 .badge-active {
@@ -805,6 +939,43 @@ td {
 
 .table-footer .count {
     color: var(--accent);
+}
+
+.pager {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.pager[hidden] {
+    display: none;
+}
+
+.pager button {
+    font-family: var(--mono);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 4px 10px;
+    cursor: pointer;
+    transition:
+        color 0.15s,
+        border-color 0.15s;
+}
+
+.pager button:hover:not(:disabled),
+.pager button:focus-visible {
+    color: var(--text);
+    border-color: var(--border-hover);
+}
+
+.pager button:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
 }
 
 /* ─── SHARED ─── */

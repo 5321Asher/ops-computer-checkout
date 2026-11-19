@@ -1,8 +1,5 @@
-# Turns this location's ticket list (ticketList.json) into tickets.txt, ready to file, then empties
-# the list. Run it from the location's folder on the share: right-click it, Run with PowerShell.
-#
-# setup.ps1 fills in $LocationFolder below with the location's folder as a full \\server\share
-# path, so this works even on computers that don't have Z: mapped.
+# Turns the ticket list (ticketList.json) into tickets.txt, ready to file, then empties the list.
+# setup.ps1 puts it in the program's folder, next to the list: right-click it, Run with PowerShell.
 #
 # The checkout program adds tickets to ticketList.json while this runs, so both take turns using
 # ticketList.json.lock: whoever creates the lock file may change the list, then deletes it.
@@ -10,10 +7,9 @@
 
 $ErrorActionPreference = 'Stop'
 
-$LocationFolder = '__LOCATION_FOLDER__'
-
-$TicketList = Join-Path $LocationFolder 'ticketList.json'
-$TicketsTxt = Join-Path $LocationFolder 'tickets.txt'
+# The program's folder: the one this script is in.
+$TicketList = Join-Path $PSScriptRoot 'ticketList.json'
+$TicketsTxt = Join-Path $PSScriptRoot 'tickets.txt'
 $LockFile = "$TicketList.lock"
 $StaleLockMinutes = 2
 $Utf8NoBom = New-Object System.Text.UTF8Encoding $false
@@ -92,13 +88,6 @@ function Format-Ticket($ticket, $rsoName) {
 }
 
 function Main {
-    if ($LocationFolder -eq ('__LOCATION' + '_FOLDER__')) {
-        throw "This is the template's copy of createTickets.ps1. Run the copy in your location's folder instead."
-    }
-    if (-not (Test-Path -LiteralPath $LocationFolder)) {
-        throw "Can't reach $LocationFolder. Check the network connection and try again."
-    }
-
     $answer = Read-Host 'This will overwrite the current tickets.txt. Continue? (y/n)'
     if ($answer.Trim().ToLower() -ne 'y') {
         Write-Host 'Stopped. Nothing was changed.'

@@ -4,6 +4,11 @@ node_modules/
 checkouts.db
 checkouts.db-journal
 checkouts-*.db
+checkouts.xlsx
+checkouts-unreadable-*.xlsx
+ticketList.json
+ticketList.json.lock
+tickets.txt
 config.json
 pending-tickets*.json
 *.tmp

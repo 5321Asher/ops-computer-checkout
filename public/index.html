@@ -42,7 +42,7 @@
                 </div>
                 <div class="field">
                     <label for="f-asset">Asset</label>
-                    <input type="text" id="f-asset" name="asset" placeholder="OPS-1234 or RSI-1234" autocomplete="off" maxlength="50" required />
+                    <input type="text" id="f-asset" name="asset" placeholder="OPS-1234" autocomplete="off" maxlength="100" required />
                 </div>
                 <div class="field">
                     <label for="f-location">Location</label>
@@ -66,6 +66,18 @@
                 <div class="empty-state"><span class="big">⊘</span>Loading assets...</div>
             </div>
         </main>
+
+        <dialog class="confirm-dialog" id="return-dialog" aria-labelledby="return-title" aria-describedby="return-details">
+            <div class="dialog-box">
+                <h2 class="section-label" id="return-title">Return this item?</h2>
+                <div class="card-name" id="return-name"></div>
+                <div class="dialog-details" id="return-details"></div>
+                <div class="dialog-actions">
+                    <button class="btn-cancel" type="button" id="return-cancel" autofocus>Cancel</button>
+                    <button class="btn-confirm" type="button" id="return-confirm">Return</button>
+                </div>
+            </div>
+        </dialog>
 
         <div id="toast" role="status" aria-live="polite"></div>
     </body>

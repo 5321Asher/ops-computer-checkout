@@ -1,8 +1,7 @@
-// The Excel copy on the share: always brought fully up to date, never losing other sheets.
+// The Excel copy: always brought fully up to date, never losing other sheets.
 
 import assert from 'node:assert/strict';
 import { chmodSync, readdirSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
 import { test } from 'node:test';
 import ExcelJS from 'exceljs';
 import { backgroundJob } from '../lib/background.js';
@@ -26,7 +25,7 @@ test('the Excel file gets both sheets, with headers, rows and local times', asyn
   const out = await app.checkOut({ name: 'Sam Lee', asset: 'RSI-2', location: 'Room 5' });
   await app.excel.runNow();
 
-  const workbook = await readWorkbook(app.config.excelPath);
+  const workbook = await readWorkbook(app.excelPath);
   assert.deepEqual(workbook.worksheets.map((ws) => ws.name), ['Daily Checkouts', 'Master Log']);
 
   const daily = workbook.getWorksheet('Daily Checkouts');
@@ -50,7 +49,7 @@ test('an empty database still gets sheets with headers', async (t) => {
   const app = await startApp();
   t.after(() => app.close());
   await app.excel.runNow();
-  const workbook = await readWorkbook(app.config.excelPath);
+  const workbook = await readWorkbook(app.excelPath);
   assert.equal(workbook.getWorksheet('Master Log').getCell('A1').value, 'id');
   assert.equal(workbook.getWorksheet('Daily Checkouts').rowCount, 1);
 });
@@ -63,11 +62,11 @@ test("other sheets in the workbook are kept, and the tabs don't move", async (t)
   workbook.addWorksheet('Daily Checkouts').getCell('A1').value = 'old data';
   workbook.addWorksheet('Summary').getCell('B2').value = { formula: "COUNTA('Master Log'!A:A)-1" };
   workbook.addWorksheet('Master Log');
-  await workbook.xlsx.writeFile(app.config.excelPath);
+  await workbook.xlsx.writeFile(app.excelPath);
 
   await app.checkOut({ asset: 'OPS-9' });
   await app.excel.runNow();
-  const saved = await readWorkbook(app.config.excelPath);
+  const saved = await readWorkbook(app.excelPath);
   assert.deepEqual(saved.worksheets.map((ws) => ws.name), ['Notes', 'Daily Checkouts', 'Summary', 'Master Log']);
   assert.equal(saved.getWorksheet('Notes').getCell('A1').value, 'keep me');
   assert.equal(saved.getWorksheet('Summary').getCell('B2').value.formula, "COUNTA('Master Log'!A:A)-1");
@@ -77,12 +76,12 @@ test("other sheets in the workbook are kept, and the tabs don't move", async (t)
 test('a damaged Excel file is kept under another name, and a new one is started', async (t) => {
   const app = await startApp();
   t.after(() => app.close());
-  writeFileSync(app.config.excelPath, 'this is not a workbook');
+  writeFileSync(app.excelPath, 'this is not a workbook');
   await app.excel.runNow();
 
-  const damaged = readdirSync(app.share).filter((f) => f.startsWith('checkouts-unreadable-'));
+  const damaged = readdirSync(app.home).filter((f) => f.startsWith('checkouts-unreadable-'));
   assert.equal(damaged.length, 1);
-  assert.ok((await readWorkbook(app.config.excelPath)).getWorksheet('Master Log'));
+  assert.ok((await readWorkbook(app.excelPath)).getWorksheet('Master Log'));
   assert.ok(app.log.lines.some((l) => l.includes('could not be opened as a workbook')));
 });
 
@@ -91,16 +90,16 @@ test('an Excel file that cannot be read is never replaced; it is retried until i
   t.after(() => app.close());
   const workbook = new ExcelJS.Workbook();
   workbook.addWorksheet('Notes').getCell('A1').value = 'keep me';
-  await workbook.xlsx.writeFile(app.config.excelPath);
-  chmodSync(app.config.excelPath, 0o000); // like the share refusing access for a while
+  await workbook.xlsx.writeFile(app.excelPath);
+  chmodSync(app.excelPath, 0o000); // like another program refusing access for a while
 
   await app.checkOut({ asset: 'OPS-5' });
   await assert.rejects(app.excel.runNow(), /EACCES/);
   assert.match((await (await app.get('/api/status')).json()).excel.lastError, /EACCES/);
 
-  chmodSync(app.config.excelPath, 0o644);
+  chmodSync(app.excelPath, 0o644);
   await waitFor(() => app.excel.status().lastSuccessAt, { message: 'the retry' });
-  const saved = await readWorkbook(app.config.excelPath);
+  const saved = await readWorkbook(app.excelPath);
   assert.equal(saved.getWorksheet('Notes').getCell('A1').value, 'keep me');
   assert.equal(saved.getWorksheet('Daily Checkouts').getCell('B2').value, 'OPS-5');
   assert.equal((await (await app.get('/api/status')).json()).excel.lastError, null);
@@ -111,17 +110,18 @@ test('a save that cannot be written leaves the old file alone and is retried', {
   t.after(() => app.close());
   await app.checkOut({ asset: 'OPS-1' });
   await app.excel.runNow();
-  chmodSync(app.share, 0o555); // the folder can't be written, like Excel holding the file open
-  t.after(() => chmodSync(app.share, 0o755));
+  // Straight into the database, so no save is started before the folder is locked below.
+  app.store.checkOut({ name: 'A', asset: 'OPS-2', location: 'B' });
+  chmodSync(app.home, 0o555); // the folder can't be written, like Excel holding the file open
+  t.after(() => chmodSync(app.home, 0o755));
 
-  await app.checkOut({ asset: 'OPS-2' });
   await assert.rejects(app.excel.runNow());
-  assert.equal((await readWorkbook(app.config.excelPath)).getWorksheet('Daily Checkouts').rowCount, 2);
-  assert.deepEqual(readdirSync(app.share).filter((f) => f.endsWith('.tmp')), []);
+  assert.equal((await readWorkbook(app.excelPath)).getWorksheet('Daily Checkouts').rowCount, 2);
+  assert.deepEqual(readdirSync(app.home).filter((f) => f.endsWith('.tmp')), []);
 
-  chmodSync(app.share, 0o755);
+  chmodSync(app.home, 0o755);
   await waitFor(() => !app.excel.status().lastError, { message: 'the retry' });
-  assert.equal((await readWorkbook(app.config.excelPath)).getWorksheet('Daily Checkouts').rowCount, 3);
+  assert.equal((await readWorkbook(app.excelPath)).getWorksheet('Daily Checkouts').rowCount, 3);
 });
 
 test('a background job never runs twice at once, and folds repeated requests into one run', async () => {
@@ -142,12 +142,12 @@ test('a background job never runs twice at once, and folds repeated requests int
   assert.equal(runs, 2); // the first run, plus one more for the requests made during it
 });
 
-test('Save to Server tries straight away, even while waiting to retry', async () => {
+test('Save Excel tries straight away, even while waiting to retry', async () => {
   let fail = true;
-  const job = backgroundJob('test', async () => { if (fail) throw new Error('share down'); },
+  const job = backgroundJob('test', async () => { if (fail) throw new Error('file is open'); },
     { retryDelays: [60_000], log: quietLog() });
   job.request();
-  await waitFor(() => job.status().lastError === 'share down');
+  await waitFor(() => job.status().lastError === 'file is open');
   fail = false;
   const started = Date.now();
   await job.runNow();
@@ -156,14 +156,14 @@ test('Save to Server tries straight away, even while waiting to retry', async ()
   await job.stop();
 });
 
-test('Save to Server pressed during a save that then fails gets a fresh try straight away', async () => {
+test('Save Excel pressed during a save that then fails gets a fresh try straight away', async () => {
   let tries = 0;
   let release;
   const job = backgroundJob('test', async () => {
     tries += 1;
     if (tries === 1) {
       await new Promise((resolve) => { release = resolve; });
-      throw new Error('share down');
+      throw new Error('file is open');
     }
   }, { retryDelays: [60_000], log: quietLog() });
   job.request();
@@ -176,15 +176,28 @@ test('Save to Server pressed during a save that then fails gets a fresh try stra
   assert.equal(tries, 2);
 });
 
+test('stopping during a save that then fails stops straight away, without waiting to retry', async () => {
+  let release;
+  const job = backgroundJob('test', () => new Promise((resolve, reject) => { release = () => reject(new Error('file is open')); }),
+    { retryDelays: [60_000], log: quietLog() });
+  job.request();
+  await waitFor(() => release);
+  const stopped = job.stop(); // the window is closed while the Excel file is being saved
+  release();
+  const started = Date.now();
+  await stopped;
+  assert.ok(Date.now() - started < 1000);
+});
+
 test('a failing job logs the first failure and then only every 10th, not every retry', async () => {
   const log = quietLog();
   let tries = 0;
-  const job = backgroundJob('Excel copy', async () => { tries += 1; throw new Error('share down'); }, { retryDelays: [1], log });
+  const job = backgroundJob('Excel copy', async () => { tries += 1; throw new Error('file is open'); }, { retryDelays: [1], log });
   job.request();
   await waitFor(() => tries >= 30);
   await job.stop();
   assert.equal(log.lines.length, 1 + Math.floor(tries / 10));
-  assert.match(log.lines[0], /^Excel copy: failed \(share down\)/);
+  assert.match(log.lines[0], /^Excel copy: failed \(file is open\)/);
 });
 
 test('the times shown in Excel are this computer\'s local time', async () => {
@@ -204,9 +217,9 @@ test('the Excel file is brought up to date with no checkouts needed (e.g. at sta
   const first = await startApp({ home });
   await first.checkOut({ asset: 'OPS-77' });
   await first.close(); // stopped before the Excel copy could be written
-  const second = await startApp({ home, share: join(home, 'share') });
+  const second = await startApp({ home });
   t.after(() => second.close());
   second.excel.request();
   await waitFor(() => second.excel.status().lastSuccessAt);
-  assert.equal((await readWorkbook(second.config.excelPath)).getWorksheet('Daily Checkouts').getCell('B2').value, 'OPS-77');
+  assert.equal((await readWorkbook(second.excelPath)).getWorksheet('Daily Checkouts').getCell('B2').value, 'OPS-77');
 });

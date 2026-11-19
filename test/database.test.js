@@ -63,13 +63,37 @@ test('a brand-new database gets exactly the first version\'s tables', () => {
   assert.equal(settings.journal, 'delete'); // the file alone holds everything, so copying it is safe
 });
 
-test('a note on a checked-out item is kept when it is returned', () => {
+test('a note on a checked-out item is kept when it is returned, and can be changed after', () => {
   const store = openDatabase(join(tempDir(), 'checkouts.db'));
   const item = store.checkOut({ name: 'A', asset: 'OPS-1', location: 'B' });
-  store.db.prepare('UPDATE daily SET note = ? WHERE id = ?').run('screen cracked', item.id);
+  assert.equal(store.setNote(item.id, 'charger included'), true);
+  assert.equal(store.checkedOut()[0].note, 'charger included');
   store.checkIn(item.id);
+  assert.equal(store.history()[0].note, 'charger included');
+
+  assert.equal(store.setNote(item.id, 'screen cracked'), true);
   assert.equal(store.history()[0].note, 'screen cracked');
+  assert.equal(store.setNote(item.id, null), true);
+  assert.equal(store.history()[0].note, null);
+  assert.equal(store.setNote('no-such-id', 'x'), false);
   store.close();
+});
+
+test('a daily table whose note column is called "notes" has it renamed "note", keeping its notes', () => {
+  const file = join(tempDir(), 'checkouts.db');
+  const db = new DatabaseSync(file);
+  db.exec(ORIGINAL_SCHEMA[0].replace('note TEXT', 'notes TEXT'));
+  db.exec(ORIGINAL_SCHEMA[1]);
+  db.prepare('INSERT INTO daily (name, asset, location, checkout, notes, id) VALUES (?, ?, ?, ?, ?, ?)')
+    .run('Old Customer', 'OPS-5', 'Room 1', '2026-02-25T15:03:22.123Z', 'spare battery', 'aaaaaaaa-0000-4000-8000-000000000003');
+  db.close();
+
+  const store = openDatabase(file);
+  assert.equal(store.checkedOut()[0].note, 'spare battery');
+  store.checkIn('aaaaaaaa-0000-4000-8000-000000000003');
+  assert.equal(store.history()[0].note, 'spare battery');
+  store.close();
+  assert.deepEqual(schemaOf(file).rows.map((r) => r.sql), [...ORIGINAL_SCHEMA]);
 });
 
 test('returning an item that is not checked out changes nothing', () => {

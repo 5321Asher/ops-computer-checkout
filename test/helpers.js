@@ -1,7 +1,7 @@
-// Shared test helpers. Every test app gets its own temporary folder, with a "share" folder inside
-// standing in for the location's folder on the server, so tests never touch real records.
+// Shared test helpers. Every test app gets its own temporary folder, standing in for the program's
+// folder, so tests never touch real records.
 
-import { mkdirSync, mkdtempSync } from 'node:fs';
+import { mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { buildApp } from '../lib/app.js';
@@ -36,15 +36,9 @@ export const ORIGINAL_SCHEMA = [
   'CREATE TABLE master_log (\n  id TEXT,\n  name TEXT,\n  asset TEXT,\n  location TEXT,\n  checkout TEXT,\n  returned_at TEXT,\n  note TEXT\n)',
 ];
 
-// Starts the app on a free port. Changes to the share are retried after 20-100 ms, not seconds.
-export async function startApp({ home = tempDir(), share = join(home, 'share'), retryDelays = [20, 50, 100] } = {}) {
-  mkdirSync(share, { recursive: true });
-  const config = {
-    location: 'Test Location',
-    locationFolder: share,
-    excelPath: join(share, 'checkouts.xlsx'),
-    ticketListPath: join(share, 'ticketList.json'),
-  };
+// Starts the app on a free port. Failed writes are retried after 20-100 ms, not seconds.
+export async function startApp({ home = tempDir(), retryDelays = [20, 50, 100] } = {}) {
+  const config = { location: 'Test Location' };
   const log = quietLog();
   const app = buildApp({ dir: home, config, publicDir: join(ROOT, 'public'), retryDelays, log });
   await new Promise((resolve) => app.server.listen(0, '127.0.0.1', resolve));
@@ -52,7 +46,6 @@ export async function startApp({ home = tempDir(), share = join(home, 'share'), 
   return {
     ...app,
     home,
-    share,
     config,
     log,
     base,
