@@ -1,7 +1,7 @@
 {
     "name": "ops-computer-checkout",
     "version": "2.0.0",
-    "description": "Check equipment in and out at a location, with an Excel copy and a ticket list, all in one local folder.",
+    "description": "Check equipment in and out at a location, with an Excel copy, a ticket list and the script that makes tickets saved to a folder on the server.",
     "homepage": "https://github.com/5321Asher/ops-computer-checkout#readme",
     "bugs": {
         "url": "https://github.com/5321Asher/ops-computer-checkout/issues"

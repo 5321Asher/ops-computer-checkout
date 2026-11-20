@@ -39,6 +39,7 @@ test('without config.json the program still starts, with no location shown', asy
   const { child, output } = await runServer(tempDir(), await freePort());
   await waitFor(() => output().includes('Keep this window open'), { message: 'start-up', timeout: 10_000 });
   assert.match(output(), /Equipment Checkout is running\./);
+  assert.match(output(), /No server folder is set in config\.json/);
   child.kill('SIGINT');
   await once(child, 'exit');
 });
@@ -49,21 +50,25 @@ test('a config.json with a mistake is explained', async () => {
   const { child, output } = await runServer(home, await freePort());
   const [code] = await once(child, 'exit');
   assert.equal(code, 1);
-  assert.match(output(), /config\.json is not valid JSON.*It should look like \{ "location": "46 Water Street" \}/);
+  assert.match(output(), /config\.json is not valid JSON.*It should look like \{ "location": "46 Water Street", "serverFolder": .*Run setup\.ps1 again/);
 });
 
-test('it starts, saves the Excel copy, serves the pages, and stops cleanly on Ctrl+C', { skip: process.platform === 'win32' }, async () => {
-  const home = homeWithConfig(); // written with a BOM, like PowerShell 5.1 would
+test('it starts, saves to the server folder, serves the pages, and stops cleanly on Ctrl+C', { skip: process.platform === 'win32' }, async () => {
+  const server = tempDir();
+  const home = homeWithConfig({ serverFolder: server }); // written with a BOM, like PowerShell 5.1 would
   const port = await freePort();
   const { child, output } = await runServer(home, port);
   await waitFor(() => output().includes('Keep this window open'), { message: 'start-up', timeout: 10_000 });
   assert.match(output(), /running for Test Location/);
   assert.match(output(), new RegExp(`http://localhost:${port}`));
+  assert.ok(output().includes(`ticket list and createTickets.ps1 are saved in ${server}`));
 
   const page = await fetch(`http://localhost:${port}/`);
   assert.equal(page.status, 200);
-  await waitFor(() => existsSync(join(home, 'checkouts.xlsx')), { message: 'the Excel copy' });
+  await waitFor(() => existsSync(join(server, 'checkouts.xlsx')) && existsSync(join(server, 'createTickets.ps1')),
+    { message: 'the Excel copy and createTickets.ps1' });
   assert.ok(existsSync(join(home, 'checkouts.db')));
+  assert.ok(!existsSync(join(home, 'checkouts.xlsx')));
 
   child.kill('SIGINT');
   const [code] = await once(child, 'exit');

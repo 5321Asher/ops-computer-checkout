@@ -1,5 +1,7 @@
 # Turns the ticket list (ticketList.json) into tickets.txt, ready to file, then empties the list.
-# setup.ps1 puts it in the program's folder, next to the list: right-click it, Run with PowerShell.
+# The checkout program keeps a copy in the location's server folder, next to the list: RSOs
+# right-click that copy, Run with PowerShell. Change this one, in the repository: the program
+# replaces the server's copy with it when it starts.
 #
 # The checkout program adds tickets to ticketList.json while this runs, so both take turns using
 # ticketList.json.lock: whoever creates the lock file may change the list, then deletes it.
@@ -7,7 +9,7 @@
 
 $ErrorActionPreference = 'Stop'
 
-# The program's folder: the one this script is in.
+# The location's server folder: the one this script is in.
 $TicketList = Join-Path $PSScriptRoot 'ticketList.json'
 $TicketsTxt = Join-Path $PSScriptRoot 'tickets.txt'
 $LockFile = "$TicketList.lock"

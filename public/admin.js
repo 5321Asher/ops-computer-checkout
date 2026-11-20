@@ -113,7 +113,7 @@ async function loadFileStatus() {
   try {
     const { excel, tickets } = await api('/api/status');
     if (excel.lastError) {
-      setStatus('excel-status', `Excel file: not saved: ${excel.lastError}. If it's open in Excel, close it; it keeps trying by itself.`, 'problem');
+      setStatus('excel-status', `Excel file: not saved: ${excel.lastError}. If it's open in Excel, close it. It keeps trying by itself, including while the server can't be reached.`, 'problem');
     } else if (excel.lastSuccessAt) {
       setStatus('excel-status', `Excel file: saved at ${clockTime(new Date(excel.lastSuccessAt))} to ${excel.path}`, 'ok');
     } else {
@@ -123,7 +123,7 @@ async function loadFileStatus() {
       setStatus('tickets-status', `Ticket list: up to date (${tickets.path})`, 'ok');
     } else if (tickets.lastError) {
       setStatus('tickets-status', `Ticket list: ${tickets.waiting} ticket(s) waiting to be added: ${tickets.lastError}. ` +
-        'They are kept safe and it keeps trying by itself.', 'problem');
+        'They are kept safe on this computer and it keeps trying by itself.', 'problem');
     } else {
       setStatus('tickets-status', `Ticket list: adding ${tickets.waiting} ticket(s)…`, '');
     }

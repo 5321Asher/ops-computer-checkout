@@ -164,7 +164,7 @@ test('Download Excel gives a workbook with both sheets', async (t) => {
   assert.equal(workbook.getWorksheet('Master Log').getCell('C2').value, 'OPS-1');
 });
 
-test('Save to Server writes the Excel file and the status says so', async (t) => {
+test('Save Excel writes the Excel file and the status says so', async (t) => {
   const app = await startApp();
   t.after(() => app.close());
   await app.checkOut();
@@ -174,6 +174,7 @@ test('Save to Server writes the Excel file and the status says so', async (t) =>
 
   const status = await (await app.get('/api/status')).json();
   assert.equal(status.location, 'Test Location');
+  assert.equal(status.serverFolder, app.serverFolder);
   assert.equal(status.excel.path, app.excelPath);
   assert.equal(status.excel.lastError, null);
   assert.ok(status.excel.lastSuccessAt);

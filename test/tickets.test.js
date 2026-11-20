@@ -71,8 +71,8 @@ test('a list that is not valid JSON is never overwritten; tickets wait until it 
 });
 
 test('tickets that could not be added are kept through a restart and added later', async () => {
-  const home = tempDir();
-  const first = await startApp({ home });
+  const [home, server] = [tempDir(), tempDir()];
+  const first = await startApp({ home, server });
   writeFileSync(first.ticketListPath, '[ broken'); // e.g. edited by hand
   await returnItem(first, { asset: 'OPS-1' });
   await returnItem(first, { asset: 'OPS-2' });
@@ -81,7 +81,7 @@ test('tickets that could not be added are kept through a restart and added later
   assert.equal(JSON.parse(readFileSync(join(home, 'pending-tickets.json'), 'utf8')).length, 2);
 
   writeFileSync(first.ticketListPath, '[]'); // fixed while the program was off
-  const second = await startApp({ home });
+  const second = await startApp({ home, server });
   await waitFor(() => second.tickets.waiting() === 0, { message: 'the waiting tickets' });
   assert.deepEqual(readList(second.ticketListPath).map((t) => t.asset), ['OPS-1', 'OPS-2']);
   assert.deepEqual(JSON.parse(readFileSync(join(home, 'pending-tickets.json'), 'utf8')), []);

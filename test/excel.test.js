@@ -79,7 +79,7 @@ test('a damaged Excel file is kept under another name, and a new one is started'
   writeFileSync(app.excelPath, 'this is not a workbook');
   await app.excel.runNow();
 
-  const damaged = readdirSync(app.home).filter((f) => f.startsWith('checkouts-unreadable-'));
+  const damaged = readdirSync(app.serverFolder).filter((f) => f.startsWith('checkouts-unreadable-'));
   assert.equal(damaged.length, 1);
   assert.ok((await readWorkbook(app.excelPath)).getWorksheet('Master Log'));
   assert.ok(app.log.lines.some((l) => l.includes('could not be opened as a workbook')));
@@ -112,14 +112,14 @@ test('a save that cannot be written leaves the old file alone and is retried', {
   await app.excel.runNow();
   // Straight into the database, so no save is started before the folder is locked below.
   app.store.checkOut({ name: 'A', asset: 'OPS-2', location: 'B' });
-  chmodSync(app.home, 0o555); // the folder can't be written, like Excel holding the file open
-  t.after(() => chmodSync(app.home, 0o755));
+  chmodSync(app.serverFolder, 0o555); // the folder can't be written, like Excel holding the file open
+  t.after(() => chmodSync(app.serverFolder, 0o755));
 
   await assert.rejects(app.excel.runNow());
   assert.equal((await readWorkbook(app.excelPath)).getWorksheet('Daily Checkouts').rowCount, 2);
-  assert.deepEqual(readdirSync(app.home).filter((f) => f.endsWith('.tmp')), []);
+  assert.deepEqual(readdirSync(app.serverFolder).filter((f) => f.endsWith('.tmp')), []);
 
-  chmodSync(app.home, 0o755);
+  chmodSync(app.serverFolder, 0o755);
   await waitFor(() => !app.excel.status().lastError, { message: 'the retry' });
   assert.equal((await readWorkbook(app.excelPath)).getWorksheet('Daily Checkouts').rowCount, 3);
 });
@@ -213,11 +213,11 @@ test('the times shown in Excel are this computer\'s local time', async () => {
 });
 
 test('the Excel file is brought up to date with no checkouts needed (e.g. at start-up)', async (t) => {
-  const home = tempDir();
-  const first = await startApp({ home });
+  const [home, server] = [tempDir(), tempDir()];
+  const first = await startApp({ home, server });
   await first.checkOut({ asset: 'OPS-77' });
   await first.close(); // stopped before the Excel copy could be written
-  const second = await startApp({ home });
+  const second = await startApp({ home, server });
   t.after(() => second.close());
   second.excel.request();
   await waitFor(() => second.excel.status().lastSuccessAt);

@@ -1,5 +1,5 @@
-// Shared test helpers. Every test app gets its own temporary folder, standing in for the program's
-// folder, so tests never touch real records.
+// Shared test helpers. Every test app gets its own temporary folders, standing in for the program's
+// folder and the location's server folder, so tests never touch real records.
 
 import { mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -37,8 +37,8 @@ export const ORIGINAL_SCHEMA = [
 ];
 
 // Starts the app on a free port. Failed writes are retried after 20-100 ms, not seconds.
-export async function startApp({ home = tempDir(), retryDelays = [20, 50, 100] } = {}) {
-  const config = { location: 'Test Location' };
+export async function startApp({ home = tempDir(), server = tempDir(), retryDelays = [20, 50, 100] } = {}) {
+  const config = { location: 'Test Location', serverFolder: server };
   const log = quietLog();
   const app = buildApp({ dir: home, config, publicDir: join(ROOT, 'public'), retryDelays, log });
   await new Promise((resolve) => app.server.listen(0, '127.0.0.1', resolve));

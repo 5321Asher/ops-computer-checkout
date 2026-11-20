@@ -1,8 +1,10 @@
 // Equipment Checkout: check equipment in and out at a location.
 // Start it with start.cmd (or `npm start`), then open http://localhost:3000.
 //
-// Everything is kept in this program's folder: the records (checkouts.db), an Excel copy of them
-// (checkouts.xlsx), and the ticket list (ticketList.json) that createTickets.ps1 turns into tickets.
+// The records (checkouts.db) are kept in this program's folder. The location's folder on the server
+// (serverFolder in config.json) gets the three files RSOs need: an Excel copy of the records
+// (checkouts.xlsx), the ticket list (ticketList.json), and createTickets.ps1, which turns the list
+// into tickets.
 
 const [major, minor] = process.versions.node.split('.').map(Number);
 if (major < 22 || (major === 22 && minor < 13)) {
@@ -44,11 +46,16 @@ app.server.listen(PORT, HOST, () => {
   console.log(`Equipment Checkout is running${config.location ? ` for ${config.location}` : ''}.`);
   console.log(`Open http://localhost:${PORT} in your web browser.`);
   console.log(`Records are saved in ${join(HOME, 'checkouts.db')}`);
-  console.log(`Excel copy: ${app.excelPath}`);
-  console.log(`Ticket list: ${app.ticketListPath}`);
+  if (config.serverFolder) {
+    console.log(`The Excel copy, ticket list and createTickets.ps1 are saved in ${config.serverFolder}`);
+  } else {
+    console.log(`No server folder is set in config.json (run setup.ps1 to set one), so the Excel copy, ticket list and createTickets.ps1 are saved in ${HOME}`);
+  }
   console.log('Keep this window open while you use the program. To stop it, close this window or press Ctrl+C.');
-  // Bring the Excel copy up to date, in case it missed changes while the program was off.
+  // Bring the Excel copy up to date, in case it missed changes while the program was off, and put
+  // this version's createTickets.ps1 next to the ticket list.
   app.excel.request();
+  app.ticketScript.request();
 });
 
 // Closing the window (SIGHUP on Windows) or Ctrl+C: finish what's under way, then stop.
